@@ -1,0 +1,26 @@
+[
+  {
+    "model": "ollama/llama3",
+    "prompt": "What is the capital of France?",
+    "response": "The capital of France is Paris.",
+    "resource_usage": {
+      "latency_ms": 594.6,
+      "prompt_tokens": 17,
+      "completion_tokens": 0,
+      "total_tokens": 17
+    },
+    "success": true
+  },
+  {
+    "model": "claude/claude-3-haiku-20240307",
+    "prompt": "What is the capital of France?",
+    "response": "The capital of France is Paris.",
+    "resource_usage": {
+      "latency_ms": 1061,
+      "prompt_tokens": 14,
+      "completion_tokens": 10,
+      "total_tokens": 24
+    },
+    "success": true
+  }
+]

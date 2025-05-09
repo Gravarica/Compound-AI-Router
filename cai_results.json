@@ -1,0 +1,251 @@
+{
+  "summary": {
+    "timestamp": "2025-05-09 16:37:48",
+    "num_samples": 5,
+    "overall_accuracy": 0.8,
+    "routing_distribution": {
+      "small_llm": 2,
+      "large_llm": 3
+    },
+    "accuracy_by_llm": {
+      "small_llm": 0.5,
+      "large_llm": 1.0
+    },
+    "accuracy_by_difficulty": {
+      "easy": 0.75,
+      "hard": 1.0
+    },
+    "router_performance": {
+      "accuracy": 0.6,
+      "false_positives": 0,
+      "false_negatives": 2
+    },
+    "average_times_ms": {
+      "routing": 584.496,
+      "inference": 1064.216,
+      "total": 1648.9779999999998
+    }
+  },
+  "results": [
+    {
+      "query_id": "Mercury_182263",
+      "query": "Which of the following is a description of an organism's development?",
+      "choices": {
+        "text": [
+          "A sunflower grows toward the Sun.",
+          "A Venus's-flytrap plant closes its leaves around a fly.",
+          "An egg hatches, grows into a tadpole and then into a frog.",
+          "A lizard loses its tail and grows a new one."
+        ],
+        "label": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "prompt": "Question: Which of the following is a description of an organism's development?\n\n        Choices:\n        A. A sunflower grows toward the Sun.\nB. A Venus's-flytrap plant closes its leaves around a fly.\nC. An egg hatches, grows into a tadpole and then into a frog.\nD. A lizard loses its tail and grows a new one.\n\n\n        Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).\n        ",
+      "predicted_difficulty": "hard",
+      "chosen_llm": "large",
+      "chosen_llm_name": "claude/claude-3-haiku-20240307",
+      "response": "C",
+      "parsed_answer": "C",
+      "correct": true,
+      "correct_answer_key": "C",
+      "total_time_ms": 2294.75,
+      "routing_time_ms": 1562.08,
+      "llm_latency_ms": 732.3,
+      "resource_usage": {
+        "router": {
+          "latency_ms": 1561.71,
+          "prompt_tokens": 247,
+          "completion_tokens": 0,
+          "total_tokens": 247
+        },
+        "llm": {
+          "latency_ms": 732,
+          "prompt_tokens": 124,
+          "completion_tokens": 4,
+          "total_tokens": 128
+        }
+      },
+      "true_difficulty": "easy"
+    },
+    {
+      "query_id": "Mercury_SC_401357",
+      "query": "Which process in the water cycle returns water to the atmosphere?",
+      "choices": {
+        "text": [
+          "condensation",
+          "evaporation",
+          "precipitation",
+          "transpiration"
+        ],
+        "label": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "prompt": "Question: Which process in the water cycle returns water to the atmosphere?\n\n        Choices:\n        A. condensation\nB. evaporation\nC. precipitation\nD. transpiration\n\n\n        Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).\n        ",
+      "predicted_difficulty": "hard",
+      "chosen_llm": "large",
+      "chosen_llm_name": "claude/claude-3-haiku-20240307",
+      "response": "B",
+      "parsed_answer": "B",
+      "correct": true,
+      "correct_answer_key": "B",
+      "total_time_ms": 759.85,
+      "routing_time_ms": 284.34,
+      "llm_latency_ms": 475.38,
+      "resource_usage": {
+        "router": {
+          "latency_ms": 284.21,
+          "prompt_tokens": 203,
+          "completion_tokens": 0,
+          "total_tokens": 203
+        },
+        "llm": {
+          "latency_ms": 475,
+          "prompt_tokens": 77,
+          "completion_tokens": 4,
+          "total_tokens": 81
+        }
+      },
+      "true_difficulty": "hard"
+    },
+    {
+      "query_id": "Mercury_7041388",
+      "query": "In order for magma to be converted to igneous rock, which actions must occur?",
+      "choices": {
+        "text": [
+          "melting and cooling",
+          "heating and pressure",
+          "weathering and erosion",
+          "crystallization and cooling"
+        ],
+        "label": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "prompt": "Question: In order for magma to be converted to igneous rock, which actions must occur?\n\n        Choices:\n        A. melting and cooling\nB. heating and pressure\nC. weathering and erosion\nD. crystallization and cooling\n\n\n        Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).\n        ",
+      "predicted_difficulty": "easy",
+      "chosen_llm": "small",
+      "chosen_llm_name": "ollama/llama3",
+      "response": "D",
+      "parsed_answer": "D",
+      "correct": true,
+      "correct_answer_key": "D",
+      "total_time_ms": 2921.66,
+      "routing_time_ms": 291.34,
+      "llm_latency_ms": 2629.67,
+      "resource_usage": {
+        "router": {
+          "latency_ms": 291.26,
+          "prompt_tokens": 215,
+          "completion_tokens": 0,
+          "total_tokens": 215
+        },
+        "llm": {
+          "latency_ms": 2629.45,
+          "prompt_tokens": 86,
+          "completion_tokens": 0,
+          "total_tokens": 86
+        }
+      },
+      "true_difficulty": "easy"
+    },
+    {
+      "query_id": "Mercury_7238910",
+      "query": "In a cell, a newly synthesized protein requires modification by the addition of a carbohydrate. Which structure will transport the protein from the site of synthesis to the site of modification?",
+      "choices": {
+        "text": [
+          "a ribosome",
+          "the endoplasmic reticulum",
+          "the Golgi apparatus",
+          "a vacuole"
+        ],
+        "label": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "prompt": "Question: In a cell, a newly synthesized protein requires modification by the addition of a carbohydrate. Which structure will transport the protein from the site of synthesis to the site of modification?\n\n        Choices:\n        A. a ribosome\nB. the endoplasmic reticulum\nC. the Golgi apparatus\nD. a vacuole\n\n\n        Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).\n        ",
+      "predicted_difficulty": "easy",
+      "chosen_llm": "small",
+      "chosen_llm_name": "ollama/llama3",
+      "response": "C",
+      "parsed_answer": "C",
+      "correct": false,
+      "correct_answer_key": "B",
+      "total_time_ms": 911.89,
+      "routing_time_ms": 522.98,
+      "llm_latency_ms": 388.82,
+      "resource_usage": {
+        "router": {
+          "latency_ms": 522.95,
+          "prompt_tokens": 238,
+          "completion_tokens": 0,
+          "total_tokens": 238
+        },
+        "llm": {
+          "latency_ms": 388.76,
+          "prompt_tokens": 108,
+          "completion_tokens": 0,
+          "total_tokens": 108
+        }
+      },
+      "true_difficulty": "easy"
+    },
+    {
+      "query_id": "MEA_2014_8_18",
+      "query": "What is the source of genetic information of offspring produced by sexual reproduction?",
+      "choices": {
+        "text": [
+          "the father only",
+          "the mother only",
+          "the mother and the father",
+          "neither the mother nor the father"
+        ],
+        "label": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "prompt": "Question: What is the source of genetic information of offspring produced by sexual reproduction?\n\n        Choices:\n        A. the father only\nB. the mother only\nC. the mother and the father\nD. neither the mother nor the father\n\n\n        Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).\n        ",
+      "predicted_difficulty": "hard",
+      "chosen_llm": "large",
+      "chosen_llm_name": "claude/claude-3-haiku-20240307",
+      "response": "C",
+      "parsed_answer": "C",
+      "correct": true,
+      "correct_answer_key": "C",
+      "total_time_ms": 1356.74,
+      "routing_time_ms": 261.74,
+      "llm_latency_ms": 1094.91,
+      "resource_usage": {
+        "router": {
+          "latency_ms": 261.69,
+          "prompt_tokens": 214,
+          "completion_tokens": 0,
+          "total_tokens": 214
+        },
+        "llm": {
+          "latency_ms": 1095,
+          "prompt_tokens": 88,
+          "completion_tokens": 4,
+          "total_tokens": 92
+        }
+      },
+      "true_difficulty": "easy"
+    }
+  ]
+}

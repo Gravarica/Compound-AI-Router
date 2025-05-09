@@ -1,6 +1,6 @@
 import json
 import random
-import ollama
+import ollama_llm
 from util import format_question
 from dataloader import load_hf_dataset
 from model import Model
