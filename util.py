@@ -1,36 +1,7 @@
 import re
 import json
 import time
-
-def format_question(question_data):
-    question = question_data['question']
-    choices = question_data['choices']
-
-    formatted_choices = ""
-    for i, choice in enumerate(choices['text']):
-        label = choices['label'][i]
-        formatted_choices += f"{label}. {choice}\n"
-
-    prompt = f"Question: {question}\n\nChoices:\n{formatted_choices}\n\nPlease select the correct answer (A, B, C or D). and only answer with the choice"
-    return prompt, question_data['answerKey'], question_data['id']
-
-
-def extract_answer(response):
-    """Extract the answer (A, B, C, or D) from the model's response"""
-    match = re.search(r'\b([A-D])\b', response)
-    if match:
-        return match.group(1)
-
-    match = re.search(r'[Aa]nswer(?:\s+is)?(?:\s*:)?\s*([A-D])', response)
-    if match:
-        return match.group(1)
-
-    match = re.search(r'([A-D])', response)
-    if match:
-        return match.group(1)
-
-    return None
-
+from typing import List, Dict, Optional, Any, Tuple
 
 def save_results(results, filename="compound_system_results.json"):
     """
@@ -40,11 +11,9 @@ def save_results(results, filename="compound_system_results.json"):
         results (List[Dict[str, Any]]): The results to save
         filename (str, optional): Output filename. Defaults to "compound_system_results.json".
     """
-    # Calculate summary statistics
     correct_count = sum(1 for r in results if r['correct'])
     accuracy = correct_count / len(results) if results else 0
 
-    # Distribution of LLM usage
     small_llm_count = sum(1 for r in results if 'small' in r['chosen_llm'].lower())
     large_llm_count = len(results) - small_llm_count
 
@@ -55,7 +24,6 @@ def save_results(results, filename="compound_system_results.json"):
     small_llm_accuracy = small_llm_correct / small_llm_count if small_llm_count else 0
     large_llm_accuracy = large_llm_correct / large_llm_count if large_llm_count else 0
 
-    # Accuracy by true difficulty
     easy_queries = [r for r in results if r['true_difficulty'] == 'easy']
     hard_queries = [r for r in results if r['true_difficulty'] == 'hard']
 
@@ -69,10 +37,7 @@ def save_results(results, filename="compound_system_results.json"):
     router_correct = sum(1 for r in results if r['predicted_difficulty'] == r['true_difficulty'])
     router_accuracy = router_correct / len(results) if results else 0
 
-    # False positives and negatives
-    # False negative: easy question predicted as hard
     false_neg = sum(1 for r in results if r['true_difficulty'] == 'easy' and r['predicted_difficulty'] == 'hard')
-    # False positive: hard question predicted as easy
     false_pos = sum(1 for r in results if r['true_difficulty'] == 'hard' and r['predicted_difficulty'] == 'easy')
 
     # Average times

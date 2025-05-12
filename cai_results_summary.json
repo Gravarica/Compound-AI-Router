@@ -1,5 +1,32 @@
 {
-  "compound_results": [
+  "summary": {
+    "timestamp": "2025-05-12 13:44:42",
+    "num_samples": 10,
+    "overall_accuracy": 0.9,
+    "routing_distribution": {
+      "small_llm": 7,
+      "large_llm": 3
+    },
+    "accuracy_by_llm": {
+      "small_llm": 1.0,
+      "large_llm": 0.6666666666666666
+    },
+    "accuracy_by_difficulty": {
+      "easy": 0.8888888888888888,
+      "hard": 1.0
+    },
+    "router_performance": {
+      "accuracy": 0.6,
+      "false_positives": 1,
+      "false_negatives": 3
+    },
+    "average_times_ms": {
+      "routing": 96.35900000000001,
+      "inference": 610.124,
+      "total": 706.665
+    }
+  },
+  "results": [
     {
       "query_id": "Mercury_184380",
       "query": "Which group of organisms is most responsible for changing the composition of Earth's early atmosphere?",
@@ -430,223 +457,5 @@
       },
       "true_difficulty": "easy"
     }
-  ],
-  "baseline_results": [
-    {
-      "query_id": "Mercury_7086748",
-      "query": "Which of these is most necessary for the production of geothermal energy?",
-      "true_difficulty": "hard",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "A",
-      "parsed_answer": "A",
-      "correct": true,
-      "correct_answer_key": "A",
-      "total_time_ms": 633.99,
-      "resource_usage": {
-        "latency_ms": 634,
-        "prompt_tokens": 82,
-        "completion_tokens": 4,
-        "total_tokens": 86
-      }
-    },
-    {
-      "query_id": "Mercury_LBS10523",
-      "query": "What process makes it possible for the nutrients from organic material to be added to soil?",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "C. decomposition",
-      "parsed_answer": "C",
-      "correct": true,
-      "correct_answer_key": "C",
-      "total_time_ms": 642.11,
-      "resource_usage": {
-        "latency_ms": 642,
-        "prompt_tokens": 81,
-        "completion_tokens": 7,
-        "total_tokens": 88
-      }
-    },
-    {
-      "query_id": "MDSA_2010_8_22",
-      "query": "Excess nitrogen fertilizers sometimes drain into waterways that flow into the Chesapeake Bay. This nitrogen may cause algae blooms, which reduce dissolved oxygen in the water. How does nitrogen negatively affect the Chesapeake Bay?",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "B",
-      "parsed_answer": "B",
-      "correct": true,
-      "correct_answer_key": "B",
-      "total_time_ms": 851.16,
-      "resource_usage": {
-        "latency_ms": 851,
-        "prompt_tokens": 133,
-        "completion_tokens": 4,
-        "total_tokens": 137
-      }
-    },
-    {
-      "query_id": "Mercury_416230",
-      "query": "In a completely cooperative relationship, each organism benefits equally. Which sequence lists these relationships in order of increasing cooperativeness?",
-      "true_difficulty": "hard",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "D",
-      "parsed_answer": "D",
-      "correct": false,
-      "correct_answer_key": "C",
-      "total_time_ms": 655.41,
-      "resource_usage": {
-        "latency_ms": 655,
-        "prompt_tokens": 133,
-        "completion_tokens": 4,
-        "total_tokens": 137
-      }
-    },
-    {
-      "query_id": "Mercury_7263095",
-      "query": "The Sun transforms matter into energy through nuclear fusion. What can be inferred about the Sun from this fact?",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "A",
-      "parsed_answer": "A",
-      "correct": true,
-      "correct_answer_key": "A",
-      "total_time_ms": 1029.03,
-      "resource_usage": {
-        "latency_ms": 1029,
-        "prompt_tokens": 113,
-        "completion_tokens": 4,
-        "total_tokens": 117
-      }
-    },
-    {
-      "query_id": "Mercury_416637",
-      "query": "Which characteristic does a euglena share with an amoeba?",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "D",
-      "parsed_answer": "D",
-      "correct": false,
-      "correct_answer_key": "A",
-      "total_time_ms": 934.14,
-      "resource_usage": {
-        "latency_ms": 934,
-        "prompt_tokens": 99,
-        "completion_tokens": 4,
-        "total_tokens": 103
-      }
-    },
-    {
-      "query_id": "MCAS_2000_4_35",
-      "query": "In the United States, each day the Sun appears to",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "B",
-      "parsed_answer": "B",
-      "correct": true,
-      "correct_answer_key": "B",
-      "total_time_ms": 531.16,
-      "resource_usage": {
-        "latency_ms": 531,
-        "prompt_tokens": 108,
-        "completion_tokens": 4,
-        "total_tokens": 112
-      }
-    },
-    {
-      "query_id": "Mercury_7263515",
-      "query": "Changes at the molecular level can turn proto-oncogenes into oncogenes. These changes cause unregulated cell division. Which disease is caused by this transformation?",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "B",
-      "parsed_answer": "B",
-      "correct": true,
-      "correct_answer_key": "B",
-      "total_time_ms": 499.71,
-      "resource_usage": {
-        "latency_ms": 500,
-        "prompt_tokens": 100,
-        "completion_tokens": 4,
-        "total_tokens": 104
-      }
-    },
-    {
-      "query_id": "MDSA_2009_5_25",
-      "query": "Baking soda mixed with vinegar produces carbon dioxide and water. The best way to prove that no mass was lost during this reaction is to",
-      "true_difficulty": "hard",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "B. determine the masses of all the substances before and after the reaction",
-      "parsed_answer": "B",
-      "correct": true,
-      "correct_answer_key": "B",
-      "total_time_ms": 537.94,
-      "resource_usage": {
-        "latency_ms": 538,
-        "prompt_tokens": 136,
-        "completion_tokens": 17,
-        "total_tokens": 153
-      }
-    },
-    {
-      "query_id": "Mercury_415745",
-      "query": "How are electromagnetic waves different from other waves?",
-      "true_difficulty": "easy",
-      "model": "claude/claude-3-haiku-20240307",
-      "response": "C",
-      "parsed_answer": "C",
-      "correct": true,
-      "correct_answer_key": "C",
-      "total_time_ms": 554.64,
-      "resource_usage": {
-        "latency_ms": 555,
-        "prompt_tokens": 104,
-        "completion_tokens": 4,
-        "total_tokens": 108
-      }
-    }
-  ],
-  "router_analysis": {
-    "accuracy": 0.6,
-    "false_positives": 1,
-    "false_negatives": 3,
-    "precision": 0.0,
-    "recall": 0.0,
-    "correct_routing": {
-      "easy": 6,
-      "hard": 0
-    }
-  },
-  "comparison": {
-    "accuracy": {
-      "compound": 0.9,
-      "baseline": 0.8,
-      "difference": 0.09999999999999998
-    },
-    "average_time_ms": {
-      "compound": 706.665,
-      "baseline": 686.929,
-      "speedup": 0.9720716322444157
-    },
-    "accuracy_by_difficulty": {
-      "easy": {
-        "compound": 0.8888888888888888,
-        "baseline": 0.8571428571428571
-      },
-      "hard": {
-        "compound": 1.0,
-        "baseline": 0.6666666666666666
-      }
-    },
-    "resource_utilization": {
-      "small_llm_usage": 0.7
-    }
-  },
-  "test_config": {
-    "router_model_path": "./router_model",
-    "max_length": 512,
-    "small_model": "llama3",
-    "large_model_type": "claude",
-    "large_model": "claude-3-haiku-20240307",
-    "num_samples": 10,
-    "baseline": true,
-    "output_file": "cai_results.json"
-  }
+  ]
 }

@@ -6,6 +6,8 @@ from llm_interface import LLMInterface
 from query_router import QueryRouter
 import logging
 
+from query_util import create_llm_prompt, create_bert_router_prompt, parse_answer
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -36,23 +38,30 @@ class CompoundAISystem:
 
         print(choices)
 
-        router_prompt = self._create_router_prompt(query, choices)
+        print("\t CREATING ROUTER PROMPT")
+        router_prompt = create_bert_router_prompt(query, choices)
 
+        print("\t PREDICTING DIFFICULTY")
         router_start_time = time.time()
-        difficulty, confidence = self._determine_difficulty(router_prompt)
+        difficulty = self.router.predict_difficulty(router_prompt)
         router_end_time = time.time()
         router_latency = round((router_end_time - router_start_time) * 1000, 2)
+        print(f"\t Difficulty: {difficulty}")
 
-        llm_prompt = self._create_llm_prompt(query, choices)
+        print("\t DETERMINE LLM")
+        llm_prompt = create_llm_prompt(query, choices)
 
         chosen_llm, chosen_llm_name, size, decision_reason = self._select_llm(difficulty)
+        print(f"\t Chosen LLM: {chosen_llm_name}")
 
+        print("\t GENERATING ANSWER")
         llm_start_time = time.time()
         response = chosen_llm.generate(llm_prompt)
         llm_end_time = time.time()
         llm_latency = round((llm_end_time - llm_start_time) * 1000, 2)
 
-        parsed_answer = self._parse_answer(response, choices)
+        print("\t PARSING ANSWER")
+        parsed_answer = parse_answer(response, choices)
 
         end_time = time.time()
         total_latency = round((end_time - start_time) * 1000, 2)
@@ -88,35 +97,9 @@ class CompoundAISystem:
             'resource_usage': resource_usage,
         }
 
-        logger.debug(f"Processed query {query_id}: difficulty={difficulty}, confidence={confidence:.4f}, chosen={size}")
+        logger.debug(f"Processed query {query_id}: difficulty={difficulty}, chosen={size}")
 
         return result
-
-    def _create_router_prompt(self, query: str, choices: Dict) -> str:
-
-        formatted_choices = ""
-        for i, choice in enumerate(choices['text']):
-            label = choices['label'][i]
-            formatted_choices += f"{label}. {choice}\n"
-
-        prompt = f"""You are an expert at analyzing questions.
-        Your task is to determine if the following question is EASY or HARD.
-
-        Question: {query}
-
-        Choices:
-        {formatted_choices}
-
-        First, analyze the question step by step:
-        1. What knowledge domains does this question involve?
-        2. Does it require specialized knowledge?
-        3. Does it involve multi-step reasoning?
-        4. How much context or background information is needed?
-
-        Based on your analysis, classify this question as either "EASY" or "HARD".
-        Only respond with the single word "EASY" or "HARD".
-        """
-        return prompt
 
     def _determine_difficulty(self, router_prompt: str) -> Tuple[str, float]:
 
@@ -143,65 +126,22 @@ class CompoundAISystem:
 
         return difficulty, confidence
 
-    def _create_llm_prompt(self, query: str, choices: Dict) -> str:
 
-        formatted_choices = ""
-        for i, choice in enumerate(choices['text']):
-            label = choices['label'][i]
-            formatted_choices += f"{label}. {choice}\n"
 
-        prompt = f"""Question: {query}
-
-        Choices:
-        {formatted_choices}
-
-        Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).
-        """
-
-        return prompt
-
-    def _select_llm(self, difficulty: str, confidence: float) -> Tuple[LLMInterface, str, str, str]:
+    def _select_llm(self, difficulty: str) -> Tuple[LLMInterface, str, str, str]:
 
         # Routing algorithm:
         # 1. Use small LLM for confident easy questions
         # 2. Use large LLM for easy questions with low confidence
         # 3. Use large LLM for hard questions
 
-
         decision_reason = ""
 
-        if difficulty.lower() == "easy" and confidence >= self.router_confidence_threshold:
-            decision_reason = f"Question classified as EASY with high confidence ({confidence:.4f})"
+        if difficulty.lower() == "easy":
+            decision_reason = f"Question classified as EASY"
             return self.small_llm, self.small_llm.get_model_name(), 'small', decision_reason
-        elif difficulty.lower() == "easy" and confidence < self.router_confidence_threshold:
-            decision_reason = f"Question classified as EASY but with low confidence ({confidence:.4f})"
-            return self.large_llm, self.large_llm.get_model_name(), 'large', decision_reason
         else:
-            decision_reason = f"Question classified as HARD with confidence ({confidence:.4f})"
+            decision_reason = f"Question classified as HARD"
             return self.large_llm, self.large_llm.get_model_name(), 'large', decision_reason
 
 
-def _parse_answer(self, response: str, choices: List[str]) -> Optional[str]:
-        import re
-
-        # Get available labels from choices
-        available_labels = choices['label']
-
-        # Look for an exact match of an available label
-        for label in available_labels:
-            if re.search(fr'\b{label}\b', response):
-                return label
-
-        # Look for "answer is X" pattern with available labels
-        for label in available_labels:
-            answer_match = re.search(fr'[Aa]nswer(?:\s+is)?(?:\s*:)?\s*{label}', response)
-            if answer_match:
-                return label
-
-        # Last resort: look for any of the available labels
-        for label in available_labels:
-            if label in response:
-                return label
-
-        # If we can't find a label, return the first label as a fallback
-        return available_labels[0] if available_labels else "A"

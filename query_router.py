@@ -179,7 +179,6 @@ class QueryRouter:
     def predict_difficulty(self, query_text: str) -> str:
         """Takes raw question text, tokenizes, predicts the class, and returns 'easy' or 'hard'."""
         try:
-            # Tokenize the query
             inputs = self.tokenizer(
                 query_text,
                 truncation=True,
@@ -188,23 +187,19 @@ class QueryRouter:
                 return_tensors="pt"
             ).to(self.device)
 
-            # Set model to evaluation mode
             self.model.eval()
 
-            # Get prediction
             with torch.no_grad():
                 outputs = self.model(**inputs)
                 logits = outputs.logits
                 predicted_class = torch.argmax(logits, dim=1).item()
 
-            # Map to difficulty
             difficulty = self.label_map.get(predicted_class, 'hard')
 
             return difficulty
 
         except Exception as e:
             logger.error(f"Error predicting difficulty: {e}")
-            # Default to 'hard' in case of an error
             return 'hard'
 
     def load_fine_tuned_model(self, model_path: str) -> None:
