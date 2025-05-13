@@ -176,7 +176,8 @@ cython_debug/
 ### Models
 
 router_model/
-router_evaluation/
+router_evaluation
+router_*/
 cai_evaluation/
 router_evaluation_v2/
 router_model_deberta/
