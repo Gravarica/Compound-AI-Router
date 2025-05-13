@@ -3,7 +3,7 @@ import requests
 import ollama
 from typing import Dict, Any, Optional
 
-from llm_interface import LLMInterface
+from src.models.llm_interface import LLMInterface
 
 class OllamaLLM(LLMInterface):
 

@@ -1,0 +1,76 @@
+{
+  "summary": {
+    "timestamp": "2025-05-13 17:09:29",
+    "num_samples": 1,
+    "overall_accuracy": 0.0,
+    "routing_distribution": {
+      "small_llm": 1,
+      "large_llm": 0
+    },
+    "accuracy_by_llm": {
+      "small_llm": 0.0,
+      "large_llm": 0
+    },
+    "accuracy_by_difficulty": {
+      "easy": 0,
+      "hard": 0.0
+    },
+    "router_performance": {
+      "accuracy": 0.0,
+      "false_positives": 1,
+      "false_negatives": 0
+    },
+    "average_times_ms": {
+      "routing": 116.81,
+      "inference": 4077.28,
+      "total": 4194.76
+    }
+  },
+  "results": [
+    {
+      "query_id": "Mercury_7263060",
+      "query": "Which theory of the origin of the Moon proposes that Earth's Moon formed by the same process that formed Mars, Jupiter, and Neptune?",
+      "choices": {
+        "text": [
+          "The Giant Impact Theory",
+          "The Fission Theory",
+          "The Capture Theory",
+          "The Coaccretion Theory"
+        ],
+        "label": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "prompt": "Question: Which theory of the origin of the Moon proposes that Earth's Moon formed by the same process that formed Mars, Jupiter, and Neptune?\n\n    Choices:\n    A. The Giant Impact Theory\nB. The Fission Theory\nC. The Capture Theory\nD. The Coaccretion Theory\n\n\n    Please select the correct answer. Respond with only the letter of the correct choice (A, B, C, or D).\n    ",
+      "predicted_difficulty": "easy",
+      "chosen_llm": "small",
+      "chosen_llm_name": "ollama/llama3",
+      "decision_reason": "Question classified as EASY",
+      "response": "B",
+      "parsed_answer": "B",
+      "correct": false,
+      "correct_answer_key": "D",
+      "total_time_ms": 4194.76,
+      "clean_processing_time_ms": 4194.76,
+      "rate_limit_wait_time_ms": 0,
+      "routing_time_ms": 116.81,
+      "llm_latency_ms": 4077.28,
+      "resource_usage": {
+        "router": {
+          "type": "transformer",
+          "latency_ms": 116.81
+        },
+        "llm": {
+          "latency_ms": 4077.28,
+          "prompt_tokens": 98,
+          "completion_tokens": 0,
+          "total_tokens": 98
+        }
+      },
+      "true_difficulty": "hard"
+    }
+  ]
+}

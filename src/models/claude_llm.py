@@ -5,7 +5,7 @@ import anthropic
 import requests
 from dotenv import load_dotenv
 
-from llm_interface import LLMInterface
+from src.models import LLMInterface
 
 load_dotenv()
 

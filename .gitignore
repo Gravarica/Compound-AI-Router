@@ -175,14 +175,14 @@ cython_debug/
 
 ### Models
 
-router_model/
-router_evaluation
+model-store/router_model/
+evaluation/router_evaluation
 router_*/
-cai_evaluation/
-router_evaluation_v2/
-router_model_deberta/
+evaluation/cai_evaluation/
+evaluation/router_evaluation_v2/
+model-store/router_model_deberta/
 *.json
-experiments/
-roberta_evaluation/
+evaluation/experiments/
+evaluation/roberta_evaluation/
 .env
 __pycache__/

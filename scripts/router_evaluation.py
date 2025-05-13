@@ -8,7 +8,7 @@ from collections import Counter
 from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 from query_router import QueryRouter
-from dataloader import ARCDataManager
+from src.data.dataloader import ARCDataManager
 import logging
 import torch
 

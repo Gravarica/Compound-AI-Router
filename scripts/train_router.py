@@ -2,7 +2,7 @@ import os
 import argparse
 import json
 from query_router import QueryRouter
-from dataloader import ARCDataManager
+from src.data.dataloader import ARCDataManager
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

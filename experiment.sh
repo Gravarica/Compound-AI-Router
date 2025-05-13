@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # List of thresholds you want to test
-thresholds=(0.5 0.6 0.7 0.8 0.9)
+thresholds=(0.25, 0.3, 0.35, 0.4 0.45)
 
 # Base output directory
 base_dir="experiments"

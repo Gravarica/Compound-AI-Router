@@ -1,8 +1,8 @@
 from typing import Optional, Dict, Any
 
-from llm_interface import LLMInterface
-from ollama_llm import OllamaLLM
-from claude_llm import ClaudeLLM
+from src.models import LLMInterface
+from src.models import OllamaLLM
+from src.models import ClaudeLLM
 
 class LLMFactory:
 

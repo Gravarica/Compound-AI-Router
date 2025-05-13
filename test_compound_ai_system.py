@@ -1,20 +1,19 @@
 import os
 import argparse
 import json
-from typing import Dict, Any, List
 import time
 import random
 
-from query_router import QueryRouter
-from util import save_results, save_baseline_results
+from src.routing.transformer_router import QueryRouter
+from src.utils.result_utils import save_results, save_baseline_results
 
 from dotenv import load_dotenv
 
-from llm_factory import LLMFactory
-from compound_ai_system import CompoundAISystem
-from dataloader import ARCDataManager
+from src.models import LLMFactory
+from src import CompoundAISystem
+from src.data import ARCDataManager
 
-from query_util import parse_answer, create_llm_prompt
+from src.routing.prompt_utils import parse_answer, create_llm_prompt
 
 load_dotenv()
 

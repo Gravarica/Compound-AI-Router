@@ -1,10 +1,8 @@
 import os
 import torch
 import numpy as np
-from typing import Dict, List, Optional, Tuple, Union, Any
-import gc
+from typing import Dict, List, Optional, Tuple, Any
 
-from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, roc_curve, auc, precision_recall_curve
 import matplotlib.pyplot as plt
@@ -157,13 +155,11 @@ class QueryRouter:
             logging_dir=os.path.join(output_dir, "logs"),
             logging_steps=eval_steps,
             report_to="none",
-            # Remove MPS-specific settings that might be causing issues
             fp16=False,
             bf16=False,
             dataloader_pin_memory=False,
-            # Add these to prevent potential issues
             gradient_accumulation_steps=2,
-            optim="adamw_torch",  # Use basic PyTorch optimizer implementation
+            optim="adamw_torch",
         )
 
         def compute_metrics(eval_pred):
@@ -182,7 +178,6 @@ class QueryRouter:
 
         from torch import nn
 
-        class_counts = np.bincount(train_dataset.labels)
         class_weights = torch.tensor([1.0, 2.0],
                                      dtype=torch.float32,
                                      device=self.device)
@@ -340,7 +335,7 @@ class QueryRouter:
             'confusion_matrix': cm.tolist(),
             'confusion_matrix_plot_path': cm_path,
             'misclassified_count': len(misclassified),
-            'misclassified_examples': misclassified[:10]  # Include only first 10 for brevity
+            'misclassified_examples': misclassified[:10]
         }
 
         return results
@@ -511,7 +506,7 @@ class QueryRouter:
         return analysis
 
 def test_query_router():
-    from dataloader import ARCDataManager
+    from src.data.dataloader import ARCDataManager
 
     manager = ARCDataManager()
     train_data, val_data, test_data = manager.create_router_training_data()

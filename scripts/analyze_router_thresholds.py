@@ -8,7 +8,7 @@ from tqdm import tqdm
 import torch
 
 from query_router import QueryRouter
-from dataloader import ARCDataManager
+from src.data.dataloader import ARCDataManager
 
 
 def analyze_router_thresholds(router_model_path, output_dir, num_samples=500):
