@@ -266,6 +266,8 @@ def main():
     manager = ARCDataManager()
     _, _, test_data = manager.create_router_training_data()
 
+    eval_set = manager.get_arc_evaluation_set(False)
+
     # Initialize QueryRouter with the fine-tuned model
     logger.info(f"Loading router model from {args.model_path}")
     router = QueryRouter(
@@ -273,7 +275,7 @@ def main():
     )
 
     logger.info("Running router evaluation...")
-    eval_results = router.evaluate_router(test_data)
+    eval_results = router.evaluate_router(eval_set, True)
 
     eval_output_path = os.path.join(args.output_dir, "evaluation_results.json")
     with open(eval_output_path, "w") as f:
@@ -308,10 +310,10 @@ def main():
     random.seed(42)
     sample_indices = random.sample(range(len(test_data)), min(args.num_examples, len(test_data)))
 
-    for i, idx in enumerate(sample_indices):
-        sample_text = test_data[idx]['text']
-        logger.info(f"Testing sample {i + 1}/{len(sample_indices)}...")
-        test_on_sample(router, sample_text, args.output_dir, i)
+    #for i, idx in enumerate(sample_indices):
+    #    sample_text = test_data[idx]['text']
+    #    logger.info(f"Testing sample {i + 1}/{len(sample_indices)}...")
+    #    test_on_sample(router, sample_text, args.output_dir, i)
 
     # Print summary
     logger.info(f"Evaluation complete! Results saved to {args.output_dir}")

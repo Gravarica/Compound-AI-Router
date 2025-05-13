@@ -33,19 +33,15 @@ def main():
 
     args = parser.parse_args()
 
-    # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # Save arguments
     with open(os.path.join(args.output_dir, "training_args.json"), "w") as f:
         json.dump(vars(args), f, indent=2)
 
-    # Initialize ARCDataManager and load data
     logger.info("Loading ARC data...")
     manager = ARCDataManager()
     train_data, val_data, test_data = manager.create_router_training_data()
 
-    # Initialize QueryRouter
     if args.eval_only and args.eval_model_path:
         logger.info(f"Initializing router with pre-trained model from {args.eval_model_path}")
         router = QueryRouter(
@@ -59,7 +55,6 @@ def main():
             max_length=args.max_length
         )
 
-    # Train or evaluate
     if not args.eval_only:
         logger.info("Starting router fine-tuning...")
         router.fine_tune(
@@ -71,17 +66,13 @@ def main():
             learning_rate=args.learning_rate
         )
 
-        # Load the best model after training
         router.load_fine_tuned_model(args.output_dir)
 
-    # Evaluate the model
     logger.info("Evaluating router performance...")
     eval_results = router.evaluate_router(test_data)
 
-    # Save evaluation results
     eval_output_path = os.path.join(args.output_dir, "evaluation_results.json")
     with open(eval_output_path, "w") as f:
-        # Convert numpy values to Python native types for JSON serialization
         cleaned_results = {}
         for k, v in eval_results.items():
             if k == 'misclassified_examples':
@@ -93,7 +84,6 @@ def main():
 
         json.dump(cleaned_results, f, indent=2)
 
-    # Print summary
     logger.info(f"Evaluation complete! Results saved to {eval_output_path}")
     logger.info(f"Accuracy: {eval_results['accuracy']:.4f}")
     logger.info(f"F1 Score: {eval_results['f1']:.4f}")

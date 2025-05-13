@@ -6,7 +6,7 @@ import time
 import random
 
 from query_router import QueryRouter
-from util import save_results
+from util import save_results, save_baseline_results
 
 from dotenv import load_dotenv
 
@@ -17,6 +17,9 @@ from dataloader import ARCDataManager
 from query_util import parse_answer, create_llm_prompt
 
 load_dotenv()
+
+CLAUDE_HAIKU_INPUT_PRICE = 0.80
+CLAUDE_HAIKU_OUTPUT_PRICE = 4.00
 
 def setup_compound_ai_system(args):
 
@@ -168,7 +171,14 @@ def run_baseline_test(args, num_samples = 5):
         start_time = time.time()
         response = large_llm.generate(prompt)
         end_time = time.time()
-        total_time = round((end_time - start_time) * 1000, 2)
+
+        usage = large_llm.get_resource_usage()
+        if 'latency_ms' in usage:
+            total_time = usage['latency_ms']
+        else:
+            total_time = round((end_time - start_time) * 1000, 2)
+
+        total_time -= usage['rate_limit_wait_time']
 
         parsed_answer = parse_answer(response, choices)
         is_correct = (parsed_answer == correct_answer)
@@ -195,6 +205,55 @@ def run_baseline_test(args, num_samples = 5):
 
     return results
 
+
+def calculate_costs_compound(results, price_per_1m_input_tokens, price_per_1m_output_tokens):
+    total_input_tokens = 0
+    total_output_tokens = 0
+
+    for r in results:
+        if 'resource_usage' in r and 'llm' in r['resource_usage']:
+            usage = r['resource_usage']['llm']
+            if 'prompt_tokens' in usage:
+                total_input_tokens += usage['prompt_tokens']
+            if 'completion_tokens' in usage:
+                total_output_tokens += usage['completion_tokens']
+
+    input_cost = (total_input_tokens / 1000000) * price_per_1m_input_tokens
+    output_cost = (total_output_tokens / 1000000) * price_per_1m_output_tokens
+    total_cost = input_cost + output_cost
+
+    return {
+        'total_input_tokens': total_input_tokens,
+        'total_output_tokens': total_output_tokens,
+        'input_cost': input_cost,
+        'output_cost': output_cost,
+        'total_cost': total_cost
+    }
+
+def calculate_costs_baseline(results, price_per_1m_input_tokens, price_per_1m_output_tokens):
+    total_input_tokens = 0
+    total_output_tokens = 0
+
+    for r in results:
+        if 'resource_usage' in r:
+            usage = r['resource_usage']
+            if 'prompt_tokens' in usage:
+                total_input_tokens += usage['prompt_tokens']
+            if 'completion_tokens' in usage:
+                total_output_tokens += usage['completion_tokens']
+
+    input_cost = (total_input_tokens / 1000000) * price_per_1m_input_tokens
+    output_cost = (total_output_tokens / 1000000) * price_per_1m_output_tokens
+    total_cost = input_cost + output_cost
+
+    return {
+        'total_input_tokens': total_input_tokens,
+        'total_output_tokens': total_output_tokens,
+        'input_cost': input_cost,
+        'output_cost': output_cost,
+        'total_cost': total_cost
+    }
+
 def compare_results(compound_ai_results, baseline_results):
 
     compound_accuracy = sum(1 for r in compound_ai_results if r['correct']) / len(compound_ai_results)
@@ -215,6 +274,12 @@ def compare_results(compound_ai_results, baseline_results):
 
     small_llm_usage = sum(1 for r in compound_ai_results if r.get('chosen_llm') == 'small') / len(compound_ai_results)
 
+    compound_costs = calculate_costs_compound([r for r in compound_ai_results if r.get('chosen_llm') == 'large'],
+                                     CLAUDE_HAIKU_INPUT_PRICE, CLAUDE_HAIKU_OUTPUT_PRICE)
+    print(compound_costs)
+    baseline_costs = calculate_costs_baseline(baseline_results,
+                                     CLAUDE_HAIKU_INPUT_PRICE, CLAUDE_HAIKU_OUTPUT_PRICE)
+    print(baseline_costs)
     comparison = {
         'accuracy': {
             'compound': compound_accuracy,
@@ -238,6 +303,14 @@ def compare_results(compound_ai_results, baseline_results):
         },
         'resource_utilization': {
             'small_llm_usage': small_llm_usage,
+        },
+        'api_costs': {
+            'compound': compound_costs,
+            'baseline': baseline_costs,
+            'savings': {
+                'amount': baseline_costs['total_cost'] - compound_costs['total_cost'],
+                'percentage': (baseline_costs['total_cost'] - compound_costs['total_cost']) / baseline_costs['total_cost'] * 100 if baseline_costs['total_cost'] > 0 else 0
+            }
         }
     }
 
@@ -305,6 +378,9 @@ def main():
     parser.add_argument('--baseline', action='store_true', help='Run baseline test with large LLM only')
     parser.add_argument('--output-file', default='cai_results.json')
 
+    parser.add_argument('--confidence-threshold', type=float, default=0.8,
+                        help='Confidence threshold for routing to the small LLM (default: 0.7)')
+
     args = parser.parse_args()
 
     try:
@@ -319,6 +395,7 @@ def main():
             baseline_results = run_baseline_test(args, args.num_samples)
 
         save_results(results, args.output_file)
+        save_baseline_results(baseline_results)
         router_analysis = analyze_router_predictions(results)
         print("\n ====== ROUTER PERFORMANCE ======")
         print(f"Router accuracy: {router_analysis['accuracy']}")

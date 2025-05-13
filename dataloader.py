@@ -132,10 +132,11 @@ class ARCDataManager:
                 eval_set.append({
                     'question': item['original_data']['question'],
                     'choices': item['original_data']['choices'],
+                    'label': item['label'],
                     'correct_answer': item['original_data']['answerKey'],
                     'id': item['id'],
                     'difficulty': 'easy' if item['label'] == 0 else 'hard',
-                    'formatted_text': item['text']
+                    'text': item['text']
                 })
             return eval_set
         else:
@@ -149,9 +150,10 @@ class ARCDataManager:
                     'question': item['question'],
                     'choices': item['choices'],
                     'correct_answer': item['answerKey'],
+                    'label': 0,
                     'id': item['id'],
                     'difficulty': 'easy',
-                    'formatted_text': self._preprocess_question(item)
+                    'text': self._preprocess_question(item)
                 })
 
             for item in self.arc_challenge['test']:
@@ -159,9 +161,10 @@ class ARCDataManager:
                     'question': item['question'],
                     'choices': item['choices'],
                     'correct_answer': item['answerKey'],
+                    'label': 1,
                     'id': item['id'],
                     'difficulty': 'hard',
-                    'formatted_text': self._preprocess_question(item)
+                    'text': self._preprocess_question(item)
                 })
 
             print(f"Created evaluation set with {len(eval_set)} examples")

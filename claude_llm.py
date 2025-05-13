@@ -23,44 +23,65 @@ class ClaudeLLM(LLMInterface):
 
     def generate(self, prompt: str, **kwargs) -> str:
 
-        start_time = time.time()
+        max_retries = 5
+        retry_count = 0
+        rate_limit_wait_time = 0
 
-        try:
-            params = {
-                'model': self.model_name,
-                'max_tokens': 1024,
-                'temperature': 0.1,
-            }
+        while retry_count < max_retries:
+            start_time = time.time()
 
-            params.update(kwargs)
+            try:
+                params = {
+                    'model': self.model_name,
+                    'max_tokens': 1024,
+                    'temperature': 0.1,
+                }
 
-            response = self.client.messages.create(
-                model=self.model_name,
-                max_tokens=params.get('max_tokens', 1024),
-                temperature=params.get('temperature', 0.1),
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
+                params.update(kwargs)
 
-            result = response.content[0].text
+                response = self.client.messages.create(
+                    model=self.model_name,
+                    max_tokens=params.get('max_tokens', 1024),
+                    temperature=params.get('temperature', 0.1),
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
 
-            end_time = time.time()
-            self._last_resource_usage = {
-                'latency_ms': round((end_time - start_time) * 1000),
-                'prompt_tokens': response.usage.input_tokens,
-                'completion_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens
-            }
+                result = response.content[0].text
 
-            return result
-        except Exception as e:
-            end_time = time.time()
-            self._last_resource_usage = {
-                'latency_ms': round((end_time - start_time) * 1000, 2),
-                'error': str(e)
-            }
-            raise Exception(f"Error generating response: ({self.model_name}): {e}")
+                end_time = time.time()
+
+                self._last_resource_usage = {
+                    'latency_ms': round((end_time - start_time) * 1000, 2),
+                    'prompt_tokens': response.usage.input_tokens,
+                    'completion_tokens': response.usage.output_tokens,
+                    'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
+                    'rate_limit_wait_time': rate_limit_wait_time
+                }
+
+                return result
+            except anthropic.RateLimitError as e:
+                retry_count += 1
+                end_time = time.time()
+
+                wait_time = 1.0
+
+                rate_limit_wait_time += wait_time * 1000  # Convert to ms
+
+                print(
+                    f"Rate limit hit, waiting for retry. This wait time ({wait_time}s) will be excluded from latency measurement.")
+
+            except Exception as e:
+                end_time = time.time()
+                self._last_resource_usage = {
+                    'latency_ms': round((end_time - start_time) * 1000, 2),
+                    'error': str(e),
+                    'rate_limit_wait_time': rate_limit_wait_time,
+                }
+                raise Exception(f"Error generating response: ({self.model_name}): {e}")
+
+        raise Exception(f"Error generating response: ({self.model_name}): Max retries exceeded.")
 
     def get_model_name(self) -> str:
         return f'claude/{self.model_name}'

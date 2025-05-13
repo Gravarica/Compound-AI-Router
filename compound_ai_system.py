@@ -17,7 +17,7 @@ class CompoundAISystem:
                  router: QueryRouter,
                  small_llm: LLMInterface,
                  large_llm: LLMInterface,
-                 router_confidence_threshold: float = 0.7):
+                 router_confidence_threshold: float = 0.8):
         self.router = router
         self.small_llm = small_llm
         self.large_llm = large_llm
@@ -43,7 +43,7 @@ class CompoundAISystem:
 
         print("\t PREDICTING DIFFICULTY")
         router_start_time = time.time()
-        difficulty = self.router.predict_difficulty(router_prompt)
+        difficulty, confidence = self.router.predict_difficulty(router_prompt, self.router_confidence_threshold)
         router_end_time = time.time()
         router_latency = round((router_end_time - router_start_time) * 1000, 2)
         print(f"\t Difficulty: {difficulty}")
@@ -58,13 +58,21 @@ class CompoundAISystem:
         llm_start_time = time.time()
         response = chosen_llm.generate(llm_prompt)
         llm_end_time = time.time()
-        llm_latency = round((llm_end_time - llm_start_time) * 1000, 2)
+
+        llm_resource_usage = chosen_llm.get_resource_usage()
+        if 'latency_ms' in llm_resource_usage:
+            llm_latency = llm_resource_usage['latency_ms']
+        else:
+            llm_latency = round((llm_end_time - llm_start_time) * 1000, 2)
+
+        rate_limit_wait_time = llm_resource_usage.get('rate_limit_wait_time', 0)
 
         print("\t PARSING ANSWER")
         parsed_answer = parse_answer(response, choices)
 
         end_time = time.time()
         total_latency = round((end_time - start_time) * 1000, 2)
+        clean_processing_time = total_latency - rate_limit_wait_time
 
         resource_usage = {
             'router': {
@@ -92,6 +100,8 @@ class CompoundAISystem:
             'correct': is_correct,
             'correct_answer_key': correct_answer_key,
             'total_time_ms': total_latency,
+            'clean_processing_time_ms': clean_processing_time,
+            'rate_limit_wait_time_ms': rate_limit_wait_time,
             'routing_time_ms': router_latency,
             'llm_latency_ms': llm_latency,
             'resource_usage': resource_usage,
@@ -128,7 +138,7 @@ class CompoundAISystem:
 
 
 
-    def _select_llm(self, difficulty: str) -> Tuple[LLMInterface, str, str, str]:
+    def _select_llm(self, difficulty: str, router_confidence: float = None) -> Tuple[LLMInterface, str, str, str]:
 
         # Routing algorithm:
         # 1. Use small LLM for confident easy questions
@@ -138,10 +148,14 @@ class CompoundAISystem:
         decision_reason = ""
 
         if difficulty.lower() == "easy":
-            decision_reason = f"Question classified as EASY"
+            confidence_str = f" with {router_confidence:.2%} confidence" if router_confidence is not None else ""
+            decision_reason = f"Question classified as EASY{confidence_str}"
             return self.small_llm, self.small_llm.get_model_name(), 'small', decision_reason
         else:
-            decision_reason = f"Question classified as HARD"
+            if router_confidence is not None and router_confidence < 0.5 + self.router_confidence_threshold:
+                decision_reason = f"Question classified as HARD with low confidence ({router_confidence:.2%})"
+            else:
+                decision_reason = f"Question classified as HARD"
             return self.large_llm, self.large_llm.get_model_name(), 'large', decision_reason
 
 

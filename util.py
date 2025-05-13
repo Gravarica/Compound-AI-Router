@@ -105,3 +105,54 @@ def save_results(results, filename="compound_system_results.json"):
     print(f"  Routing: {avg_routing_time:.2f}ms")
     print(f"  Inference: {avg_inference_time:.2f}ms")
     print(f"  Total: {avg_total_time:.2f}ms")
+
+def save_baseline_results(results, filename = "baseline_results.json"):
+
+    correct_count = sum(1 for r in results if r['correct'])
+    accuracy = correct_count / len(results) if results else 0
+
+    easy_queries = [r for r in results if r['true_difficulty'] == 'easy']
+    hard_queries = [r for r in results if r['true_difficulty'] == 'hard']
+
+    easy_correct = sum(1 for r in easy_queries if r['correct'])
+    hard_correct = sum(1 for r in hard_queries if r['correct'])
+
+    easy_accuracy = easy_correct / len(easy_queries) if easy_queries else 0
+    hard_accuracy = hard_correct / len(hard_queries) if hard_queries else 0
+
+    avg_time = sum(r['total_time_ms'] for r in results) / len(results) if results else 0
+
+    total_input_tokens = sum(r['resource_usage']['prompt_tokens'] for r in results) if results else 0
+    total_output_tokens = sum(r['resource_usage']['completion_tokens'] for r in results)
+
+    summary = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "num_samples": len(results),
+        "overall_accuracy": accuracy,
+        "accuracy_by_difficulty": {
+            "easy": easy_accuracy,
+            "hard": hard_accuracy
+        },
+        "average_time_ms": avg_time,
+        "total_input_tokens": total_input_tokens,
+        "total_output_tokens": total_output_tokens
+    }
+
+    output = {
+        "summary": summary,
+        "results": results
+    }
+
+    with open(filename, "w") as f:
+        json.dump(output, f, indent=2)
+
+    print(f"\nResults saved to {filename}")
+    print(f"\nSummary:")
+    print(f"Overall accuracy: {accuracy:.2%}")
+    print(f"\nAccuracy by true difficulty:")
+    print(f"  Easy questions: {easy_accuracy:.2%} ({easy_correct}/{len(easy_queries)})")
+    print(f"  Hard questions: {hard_accuracy:.2%} ({hard_correct}/{len(hard_queries)})")
+    print(f"\nAverage time: {avg_time:.2f}ms")
+    print(f"Total input tokens: {total_input_tokens}")
+    print(f"Total output tokens: {total_output_tokens}")
+

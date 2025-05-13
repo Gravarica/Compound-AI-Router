@@ -2,7 +2,9 @@ import os
 import torch
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Union, Any
+import gc
 
+from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 import matplotlib.pyplot as plt
@@ -50,6 +52,28 @@ class ArcDataset(Dataset):
 
         return encoding
 
+
+class CustomTrainer(Trainer):
+    def __init__(self, loss_fn=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loss_fn = loss_fn
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        device = next(model.parameters()).device
+
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        labels = inputs.pop("labels")
+
+        # Forward pass
+        outputs = model(**inputs)
+
+        logits = outputs.logits.to(torch.float32)
+        labels = labels.to(torch.long)
+
+        loss = self.loss_fn(logits, labels)
+
+        return (loss, outputs) if return_outputs else loss
+
 class QueryRouter:
     def __init__(
             self,
@@ -58,16 +82,17 @@ class QueryRouter:
             device: Optional[str] = None,
             max_length: int = 512
     ):
+
         self.model_name_or_path = model_name_or_path
         self.num_labels = num_labels
         self.max_length = max_length
         self.label_map = {0: 'easy', 1: 'hard'}
         self.inv_label_map = {v: k for k, v in self.label_map.items()}
 
-        if device is None:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        else:
-            self.device = device
+        torch.mps.empty_cache()
+
+        self.mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+        self.device = torch.device("mps" if self.mps_available else "cpu")
 
         logger.info(f"Using device: {self.device}")
 
@@ -85,8 +110,12 @@ class QueryRouter:
                 trust_remote_code=True
             )
 
-            self.model.to(self.device)
-            logger.info("Model and tokenizer loaded successfully.")
+            for param in self.model.parameters():
+                if param.data.dtype == torch.float16:  # Or other non-float32 types
+                    param.data = param.data.to(torch.float32)
+
+            self.model = self.model.to(self.device)  # Crucial
+            logger.info(f"Model and tokenizer loaded successfully on {self.device}")
         except Exception as e:
             logger.error(f"Error loading model and tokenizer: {e}")
             raise
@@ -119,16 +148,22 @@ class QueryRouter:
             weight_decay=weight_decay,
             learning_rate=learning_rate,
             eval_steps=eval_steps,
-            eval_strategy='steps',
-            save_strategy='steps',
+            eval_strategy='epoch',
+            save_strategy='epoch',
             load_best_model_at_end=True,
             save_total_limit=save_total_limit,
-            save_steps=eval_steps,
             metric_for_best_model="eval_f1",
             greater_is_better=True,
             logging_dir=os.path.join(output_dir, "logs"),
             logging_steps=eval_steps,
-            report_to="none"
+            report_to="none",
+            # Remove MPS-specific settings that might be causing issues
+            fp16=False,
+            bf16=False,
+            dataloader_pin_memory=False,
+            # Add these to prevent potential issues
+            gradient_accumulation_steps=2,
+            optim="adamw_torch",  # Use basic PyTorch optimizer implementation
         )
 
         def compute_metrics(eval_pred):
@@ -139,15 +174,27 @@ class QueryRouter:
                 "accuracy": accuracy_score(labels, predictions),
                 "f1": f1_score(labels, predictions, average="weighted"),
                 "precision": precision_score(labels, predictions, average="weighted"),
-                "recall": recall_score(labels, predictions, average="weighted")
+                "recall": recall_score(labels, predictions, average="weighted"),
+                'hard_f1': f1_score(labels, predictions, pos_label=1),
+                'easy_f1': f1_score(labels, predictions, pos_label=0),
+                'macro_f1': f1_score(labels, predictions, average="macro"),
             }
 
-        trainer = Trainer(
+        from torch import nn
+
+        class_counts = np.bincount(train_dataset.labels)
+        class_weights = torch.tensor([1.0, 2.0],
+                                     dtype=torch.float32,
+                                     device=self.device)
+        loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+
+        trainer = CustomTrainer(
             model=self.model,
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
             compute_metrics=compute_metrics,
+            loss_fn=loss_fn,
             callbacks=[
                 EarlyStoppingCallback(
                     early_stopping_patience=early_stopping_patience,
@@ -159,25 +206,21 @@ class QueryRouter:
         logger.info("Starting fine-tuning...")
         trainer.train()
 
-        # Evaluate the model
         logger.info("Evaluating the fine-tuned model...")
         eval_results = trainer.evaluate()
         logger.info(f"Evaluation results: {eval_results}")
 
-        # Save the model
         logger.info(f"Saving the fine-tuned model to {output_dir}")
         trainer.save_model(output_dir)
         self.tokenizer.save_pretrained(output_dir)
 
-        # Create an evaluation summary file
         with open(os.path.join(output_dir, "eval_results.txt"), "w") as f:
             for key, value in eval_results.items():
                 f.write(f"{key}: {value}\n")
 
         logger.info(f"Fine-tuning completed. Model saved to {output_dir}")
 
-    def predict_difficulty(self, query_text: str) -> str:
-        """Takes raw question text, tokenizes, predicts the class, and returns 'easy' or 'hard'."""
+    def predict_difficulty(self, query_text: str, easy_confidence_threshold: float = 0.7) -> str:
         try:
             inputs = self.tokenizer(
                 query_text,
@@ -192,18 +235,23 @@ class QueryRouter:
             with torch.no_grad():
                 outputs = self.model(**inputs)
                 logits = outputs.logits
+                probs = torch.nn.functional.softmax(logits, dim=1)[0].cpu().numpy()
                 predicted_class = torch.argmax(logits, dim=1).item()
+
+            confidence = probs[predicted_class]
+
+            if predicted_class == 0 and confidence < easy_confidence_threshold:
+                predicted_class = 1  # Change to 'hard'
 
             difficulty = self.label_map.get(predicted_class, 'hard')
 
-            return difficulty
+            return difficulty, confidence
 
         except Exception as e:
             logger.error(f"Error predicting difficulty: {e}")
             return 'hard'
 
     def load_fine_tuned_model(self, model_path: str) -> None:
-        """Loads a previously fine-tuned router model."""
         try:
             logger.info(f"Loading fine-tuned tokenizer from {model_path}")
             self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -219,7 +267,6 @@ class QueryRouter:
             raise
 
     def evaluate_router(self, test_data: List[Dict]) -> Dict[str, Any]:
-        """Evaluates the router on test data and returns metrics."""
         test_dataset = ArcDataset(test_data, self.tokenizer, self.max_length)
 
         self.model.eval()
@@ -229,7 +276,6 @@ class QueryRouter:
         all_texts = []
         all_ids = []
 
-        # Create a test dataloader
         from torch.utils.data import DataLoader
         test_dataloader = DataLoader(test_dataset, batch_size=8)
 
@@ -297,7 +343,6 @@ class QueryRouter:
         return results
 
 def test_query_router():
-    """Simple test function for QueryRouter."""
     from dataloader import ARCDataManager
 
     manager = ARCDataManager()
