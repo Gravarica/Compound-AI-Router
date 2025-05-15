@@ -3,7 +3,7 @@
 import os
 import argparse
 import glob
-from visualization import ResultsVisualizer
+from visualization import ResultsVisualizerV2
 from src.utils.logging import setup_logging
 
 
@@ -56,7 +56,7 @@ def main():
 
     try:
         # Create visualizer
-        visualizer = ResultsVisualizer(
+        visualizer = ResultsVisualizerV2(
             results_dir=args.results_dir,
             output_dir=args.output_dir
         )
