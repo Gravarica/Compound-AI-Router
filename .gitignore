@@ -184,5 +184,6 @@ model-store/router_model_deberta/
 *.json
 evaluation/experiments/
 evaluation/roberta_evaluation/
+evaluation/example
 .env
 __pycache__/

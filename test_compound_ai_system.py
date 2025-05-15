@@ -4,7 +4,7 @@ import json
 import time
 import random
 
-from src.routing.transformer_router import QueryRouter
+from src.routing import QueryRouter
 from src.utils.result_utils import save_results, save_baseline_results
 
 from dotenv import load_dotenv

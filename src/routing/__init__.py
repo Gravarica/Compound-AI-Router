@@ -1,4 +1,8 @@
-from src.routing.transformer_router import QueryRouter
+from src.routing.transformer_router import TransformerRouter
+from src.routing.base_router import BaseRouter
+from src.routing.router_factory import RouterFactory
+from src.routing.query_router import Router
+from src.routing.router import QueryRouter
 from src.routing.prompt_utils import (
     parse_answer,
     create_llm_prompt,
@@ -8,6 +12,10 @@ from src.routing.prompt_utils import (
 )
 
 __all__ = [
+    "TransformerRouter",
+    "BaseRouter",
+    "Router",
+    "RouterFactory",
     "QueryRouter",
     "parse_answer",
     "create_llm_prompt",
