@@ -1,0 +1,20 @@
+# Configuration for running a test with a Random Router baseline
+router:
+  type: "random"
+  seed: 42 # for reproducibility
+
+small_llm:
+  type: "ollama"
+  model_name: "llama3"
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+evaluation:
+  output_dir: "results"
+  num_samples: 500
+  seed: 42
+  output_file: "results/cai_results_random.json" 

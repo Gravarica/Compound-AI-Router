@@ -8,7 +8,7 @@ import logging
 
 from src.data import ARCDataManager
 from src.models.llm_factory import LLMFactory
-from src.routing import QueryRouter
+from src.routing.router_factory import RouterFactory
 from src import CompoundAISystem
 from src.utils.config import load_config
 from src.utils.logging import setup_logging
@@ -33,7 +33,9 @@ class TestConfiguration:
         self.config = load_config(config_path)
 
         for key, value in kwargs.items():
-            if key == 'router_model_path' and value:
+            if key == 'router_type' and value:
+                self.config['router']['type'] = value
+            elif key == 'router_model_path' and value:
                 self.config['router']['model_path'] = value
             elif key == 'small_model' and value:
                 self.config['small_llm']['model_name'] = value
@@ -154,9 +156,9 @@ class CompoundAISystemEvaluator:
 
         # Setup router
         router_config = self.config.get_router_config()
-        router = QueryRouter(
-            model_name_or_path=router_config['model_path'],
-            max_length=router_config.get('max_length', 512)
+        router = RouterFactory.create_router(
+            router_type=router_config.get('type', 'transformer'),
+            config=router_config
         )
 
         # Setup small LLM
@@ -503,27 +505,30 @@ def parse_arguments():
     Returns:
         Parsed arguments
     """
-    parser = argparse.ArgumentParser(description="Test compound AI system")
-
-    parser.add_argument('--config', type=str, help='Path to configuration file')
-
-    parser.add_argument('--router-model-path', type=str, required=False,
-                        help='Path to the fine-tuned router model')
-    parser.add_argument('--max-length', type=int, default=512,
-                        help='Maximum sequence length for router')
-
-    parser.add_argument('--small-model', default='llama3')
-    parser.add_argument('--large-model-type', default='claude', choices=['ollama', 'claude'])
-    parser.add_argument('--large-model', default='claude-3-haiku-20240307')
-
-    parser.add_argument('--num-samples', type=int)
-    parser.add_argument('--baseline', action='store_true', help='Run baseline test with large LLM only')
-    parser.add_argument('--output-file', default='results/cai_results.json')
-
-    parser.add_argument('--confidence-threshold', type=float, default=0.8,
-                        help='Confidence threshold for routing to the small LLM (default: 0.8)')
-
-    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
+    parser = argparse.ArgumentParser(description="Test Compound AI System")
+    parser.add_argument('--config', type=str, default='configs/default.yaml',
+                        help='Path to the configuration file')
+    parser.add_argument('--debug', action='store_true',
+                        help='Enable debug logging')
+    parser.add_argument('--baseline', action='store_true',
+                        help='Run baseline test with large LLM only')
+    # Add arguments to override config values
+    parser.add_argument('--router-type', type=str,
+                        help="Type of router to use (e.g., 'transformer', 'random')")
+    parser.add_argument('--router-model-path', type=str,
+                        help='Path to the fine-tuned router model (for transformer router)')
+    parser.add_argument('--small-model', type=str,
+                        help='Name of the small model')
+    parser.add_argument('--large-model-type', type=str, choices=['ollama', 'claude'],
+                        help='Type of the large model')
+    parser.add_argument('--large-model', type=str,
+                        help='Name of the large model')
+    parser.add_argument('--num-samples', type=int,
+                        help='Number of samples to evaluate')
+    parser.add_argument('--confidence-threshold', type=float,
+                        help='Confidence threshold for router')
+    parser.add_argument('--output-file', type=str,
+                        help='Path to save the output results')
 
     return parser.parse_args()
 
@@ -536,6 +541,7 @@ def main():
 
     config = TestConfiguration(
         config_path=args.config,
+        router_type=args.router_type,
         router_model_path=args.router_model_path,
         small_model=args.small_model,
         large_model_type=args.large_model_type,

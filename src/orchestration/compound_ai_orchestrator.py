@@ -13,9 +13,7 @@ logger = setup_logging(name="compound_ai_orchestrator")
 
 
 class CompoundAIOrchestrator(BaseOrchestrator):
-    """
-    Orchestrates the compound AI system components.
-    """
+
 
     def __init__(
             self,
@@ -25,26 +23,14 @@ class CompoundAIOrchestrator(BaseOrchestrator):
             router_confidence_threshold: float = 0.8,
             routing_strategy: Optional[RoutingStrategy] = None
     ):
-        """
-        Initialize the orchestrator.
-
-        Args:
-            router: The router for query difficulty classification
-            small_llm: The small LLM for easy queries
-            large_llm: The large LLM for hard queries
-            router_confidence_threshold: Confidence threshold for router
-            routing_strategy: Optional custom routing strategy
-        """
         self.router = router
         self.small_llm = small_llm
         self.large_llm = large_llm
 
-        # Initialize components
         self.query_processor = QueryProcessor()
         self.response_parser = ResponseParser()
         self.metrics_collector = MetricsCollector()
 
-        # Initialize routing strategy
         if routing_strategy is None:
             self.routing_strategy = ThresholdBasedRoutingStrategy(
                 small_llm=small_llm,
@@ -67,19 +53,7 @@ class CompoundAIOrchestrator(BaseOrchestrator):
             choices: Dict,
             correct_answer_key: Optional[str] = None
     ) -> Dict[str, Any]:
-        """
-        Process a query and return the result.
 
-        Args:
-            query_id: Unique identifier for the query
-            query: The query text
-            choices: Dictionary of choices for multiple-choice questions
-            correct_answer_key: Optional correct answer key for evaluation
-
-        Returns:
-            Dictionary with processing results
-        """
-        # Start metrics collection
         self.metrics_collector.start_query()
 
         try:
@@ -117,10 +91,8 @@ class CompoundAIOrchestrator(BaseOrchestrator):
 
         except Exception as e:
             logger.error(f"Error processing query {query_id}: {e}")
-            # Ensure metrics are finalized even on error
             self.metrics_collector.end_query()
 
-            # Return error result
             return {
                 'query_id': query_id,
                 'query': query,
@@ -129,11 +101,9 @@ class CompoundAIOrchestrator(BaseOrchestrator):
                 'success': False
             }
 
-        # Finalize metrics
         self.metrics_collector.end_query()
         metrics = self.metrics_collector.get_metrics()
 
-        # Construct result
         result = {
             'query_id': query_id,
             'query': query,

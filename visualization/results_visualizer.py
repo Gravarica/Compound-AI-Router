@@ -13,7 +13,8 @@ from matplotlib.gridspec import GridSpec
 
 class ResultsVisualizer:
     """
-    Visualizes and analyzes CompoundAI system test results.
+    Visualizes and analyzes CompoundAI system test results with a focus on
+    creating clear, scientific, and publication-quality plots.
     """
 
     def __init__(self, results_dir: str, output_dir: Optional[str] = None):
@@ -28,9 +29,38 @@ class ResultsVisualizer:
         self.output_dir = output_dir or os.path.join(results_dir, "visualizations")
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # Set default styling
-        plt.style.use('seaborn-v0_8-whitegrid')
-        sns.set_context("talk")
+        # Set a professional and accessible default style for scientific papers
+        plt.style.use('seaborn-v0_8-ticks')
+        plt.rcParams.update({
+            'font.family': 'serif',
+            'font.serif': 'Times New Roman',
+            'axes.labelweight': 'bold',
+            'axes.titleweight': 'bold',
+            'axes.titlesize': 20,
+            'axes.labelsize': 18,
+            'xtick.labelsize': 16,
+            'ytick.labelsize': 16,
+            'legend.fontsize': 14,
+            'text.color': 'black',
+            'axes.labelcolor': 'black',
+            'xtick.color': 'black',
+            'ytick.color': 'black'
+        })
+
+        # Define a consistent, colorblind-friendly color palette
+        self.palette = {
+            'compound_primary': '#0072B2',  # Blue
+            'compound_secondary': '#56B4E9', # Light Blue
+            'baseline_primary': '#009E73',  # Green
+            'baseline_secondary': '#81C784', # Light Green
+            'highlight_positive': '#D55E00', # Vermillion
+            'highlight_neutral': '#CC79A7', # Pink
+            'false_positive': '#E69F00', # Orange
+            'false_negative': '#8B4513'  # Brown
+        }
+        
+        self.hatches = ['/', '\\', 'x', '+', '.', '*']
+
 
     def load_results(self, pattern: str = "*_full.json") -> Dict[str, Any]:
         """
@@ -61,6 +91,16 @@ class ResultsVisualizer:
 
         return results
 
+    def _add_bar_labels(self, ax: plt.Axes, fmt: Union[str, callable] = "{:.1f}", **kwargs):
+        """Helper to add labels to bars cleanly."""
+        for container in ax.containers:
+            if callable(fmt):
+                labels = [fmt(v) for v in container.datavalues]
+            else:
+                # Use printf-style formatting for compatibility with formats like '%d', '%.1f%%'
+                labels = [fmt % v for v in container.datavalues]
+            ax.bar_label(container, labels=labels, **kwargs)
+
     def save_individual_visualizations(self, results: Dict[str, Any], prefix: str = "individual"):
         """
         Save each visualization as a separate file.
@@ -74,59 +114,64 @@ class ResultsVisualizer:
         os.makedirs(individual_dir, exist_ok=True)
 
         # 1. Accuracy comparison
-        fig, ax = plt.figure(figsize=(10, 6)), plt.gca()
+        fig, ax = plt.subplots(figsize=(10, 7))
         self._plot_improved_accuracy_comparison(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_accuracy_comparison.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
-        # 2. Router performance
-        fig, ax = plt.figure(figsize=(10, 6)), plt.gca()
-        self._plot_improved_router_performance(results, ax)
+        # 2a. Router Accuracy
+        fig, ax = plt.subplots(figsize=(10, 7))
+        self._plot_router_accuracy(results, ax)
         plt.tight_layout()
-        plt.savefig(os.path.join(individual_dir, f"{prefix}_router_performance.png"), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(individual_dir, f"{prefix}_router_accuracy.png"), dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # 2b. Router Errors
+        fig, ax = plt.subplots(figsize=(10, 7))
+        self._plot_router_errors(results, ax)
+        plt.tight_layout()
+        plt.savefig(os.path.join(individual_dir, f"{prefix}_router_errors.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 3. Model usage
-        fig, ax = plt.figure(figsize=(10, 6)), plt.gca()
+        fig, ax = plt.subplots(figsize=(10, 7))
         self._plot_improved_model_usage(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_model_usage.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 4. Latency comparison
-        fig, ax = plt.figure(figsize=(10, 6)), plt.gca()
+        fig, ax = plt.subplots(figsize=(10, 7))
         self._plot_improved_latency_comparison(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_latency_comparison.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 5. Cost savings
-        fig, ax = plt.figure(figsize=(10, 6)), plt.gca()
+        fig, ax = plt.subplots(figsize=(10, 7))
         self._plot_improved_cost_savings(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_cost_savings.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 6. Accuracy by difficulty
-        fig, ax = plt.figure(figsize=(10, 6)), plt.gca()
+        fig, ax = plt.subplots(figsize=(12, 7))
         self._plot_improved_accuracy_by_difficulty(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_accuracy_by_difficulty.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 7. Token usage
-        fig, ax = plt.figure(figsize=(12, 6)), plt.gca()
+        fig, ax = plt.subplots(figsize=(12, 7))
         self._plot_improved_token_usage(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_token_usage.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 8. Radar chart (multi-metric comparison)
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='polar')  # <-- This is the key line
-
-        # Plot and save
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection='polar')
         self._plot_radar_chart(results, ax)
         plt.tight_layout()
         plt.savefig(os.path.join(individual_dir, f"{prefix}_radar_chart.png"), dpi=300, bbox_inches='tight')
@@ -149,43 +194,74 @@ class ResultsVisualizer:
                 difference.append(result['comparison']['accuracy']['difference'] * 100)
 
         x = np.arange(len(test_names))
-        width = 0.35
+        width = 0.4
 
-        compound_bars = ax.bar(x - width / 2, compound_acc, width, color='#4CAF50', label='Compound System')
-        baseline_bars = ax.bar(x + width / 2, baseline_acc, width, color='#2196F3', label='Baseline')
+        compound_bars = ax.bar(x - width / 2, compound_acc, width, 
+                               color=self.palette['compound_primary'], 
+                               edgecolor='black',
+                               label='Compound System')
+        baseline_bars = ax.bar(x + width / 2, baseline_acc, width, 
+                               color=self.palette['baseline_primary'], 
+                               edgecolor='black',
+                               label='Baseline')
 
-        ax.set_ylabel('Accuracy (%)')
-        ax.set_title('Accuracy Comparison')
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Accuracy Comparison', pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
 
-        # Add direct labels instead of legend
-        for i, bar in enumerate(compound_bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 1,
-                    f"Compound\n{compound_acc[i]:.1f}%",
-                    ha='center', va='bottom', fontsize=9)
+        # Format y-axis as percentage
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
 
-        for i, bar in enumerate(baseline_bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 1,
-                    f"Baseline\n{baseline_acc[i]:.1f}%",
-                    ha='center', va='bottom', fontsize=9)
+        self._add_bar_labels(ax, fmt='%.1f%%', padding=3, fontsize=12)
 
-        # Add improvement text between bars
-        for i in range(len(x)):
-            mid_x = (compound_bars[i].get_x() + compound_bars[i].get_width() + baseline_bars[i].get_x()) / 2
-            max_height = max(compound_bars[i].get_height(), baseline_bars[i].get_height())
-            ax.text(mid_x, max_height + 5,
-                    f"Δ: {difference[i]:+.1f}%",
-                    ha='center', va='bottom', color='#E91E63', fontweight='bold')
+        max_height = max(max(compound_acc), max(baseline_acc))
+        ax.set_ylim(0, max_height * 1.2)
 
-        ax.set_ylim(0, max(max(compound_acc), max(baseline_acc)) * 1.25)
+        # Add a line for the difference
+        ax2 = ax.twinx()
+        ax2.plot(x, difference, color=self.palette['highlight_positive'], marker='D', markersize=6, linestyle='--', label='Accuracy Delta')
+        ax2.set_ylabel('Accuracy Point Difference', color=self.palette['highlight_positive'])
+        ax2.tick_params(axis='y', colors=self.palette['highlight_positive'])
+        ax2.axhline(0, color='black', linestyle='--', alpha=0.5)
+        ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:+.1f}pp'))
 
-    def _plot_improved_router_performance(self, results: Dict[str, Any], ax):
-        """Plot improved router performance metrics"""
+        # Combine legends
+        lines, labels = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines + lines2, labels + labels2, loc='upper left', frameon=True, facecolor='white', framealpha=0.7)
+        sns.despine(ax=ax, right=False)
+        sns.despine(ax=ax2, left=False)
+
+    def _plot_router_accuracy(self, results: Dict[str, Any], ax):
+        """Plot router accuracy."""
         test_names = []
         router_acc = []
+
+        for name, result in results.items():
+            if 'comparison' in result and 'router_performance' in result['comparison']:
+                test_names.append(name)
+                perf = result['comparison']['router_performance']
+                router_acc.append(perf['accuracy'] * 100)
+
+        if not test_names:
+            ax.text(0.5, 0.5, "No Router Data", ha='center', va='center')
+            return
+
+        bars = ax.bar(test_names, router_acc, color=self.palette['highlight_neutral'], width=0.6, edgecolor='black')
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Router Accuracy', pad=20)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax.set_ylim(0, 105)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
+        self._add_bar_labels(ax, fmt='%.1f%%', padding=3, fontsize=12)
+        sns.despine(ax=ax)
+
+    def _plot_router_errors(self, results: Dict[str, Any], ax):
+        """Plot router errors (false positives and negatives)."""
+        test_names = []
         false_pos = []
         false_neg = []
 
@@ -193,41 +269,34 @@ class ResultsVisualizer:
             if 'comparison' in result and 'router_performance' in result['comparison']:
                 test_names.append(name)
                 perf = result['comparison']['router_performance']
-                router_acc.append(perf['accuracy'] * 100)
                 false_pos.append(perf['false_positives'])
                 false_neg.append(perf['false_negatives'])
 
-        # Create a figure with 2 subplots side by side
-        fig = plt.figure(figsize=(12, 5))
-        ax1 = fig.add_subplot(121)  # Accuracy subplot
-        ax2 = fig.add_subplot(122)  # Errors subplot
+        if not test_names:
+            ax.text(0.5, 0.5, "No Router Data", ha='center', va='center')
+            return
 
-        # Plot accuracy as a bar chart
-        accuracy_bars = ax1.bar(test_names, router_acc, color='#673AB7')
-        ax1.set_ylabel('Accuracy (%)')
-        ax1.set_title('Router Accuracy')
-        ax1.set_xticklabels(test_names, rotation=45, ha='right')
-
-        # Add labels on top of bars
-        for i, bar in enumerate(accuracy_bars):
-            height = bar.get_height()
-            ax1.text(bar.get_x() + bar.get_width() / 2, height + 1,
-                     f"{router_acc[i]:.1f}%", ha='center', va='bottom')
-
-        # Plot false positives and negatives as a grouped bar chart
         x = np.arange(len(test_names))
-        width = 0.35
+        width = 0.4
 
-        ax2.bar(x - width / 2, false_pos, width, color='#FF5722', label='False Positives')
-        ax2.bar(x + width / 2, false_neg, width, color='#FFC107', label='False Negatives')
+        ax.bar(x - width / 2, false_pos, width, 
+               color=self.palette['false_positive'], edgecolor='black', 
+               label='False Positives (Easy -> Hard)')
+        ax.bar(x + width / 2, false_neg, width, 
+               color=self.palette['false_negative'], edgecolor='black',
+               label='False Negatives (Hard -> Easy)')
 
-        ax2.set_ylabel('Count')
-        ax2.set_title('Router Errors')
-        ax2.set_xticks(x)
-        ax2.set_xticklabels(test_names, rotation=45, ha='right')
-        ax2.legend(loc='upper right')
+        ax.set_ylabel('Error Count')
+        ax.set_title('Router Errors', pad=20)
+        ax.set_xticks(x)
+        ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.legend(frameon=True, facecolor='white', framealpha=0.7)
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
 
-        return fig
+        self._add_bar_labels(ax, fmt='%d', padding=3, fontsize=12)
+        max_val = max(max(false_pos) if false_pos else [0], max(false_neg) if false_neg else [0])
+        ax.set_ylim(0, max_val * 1.25)
+        sns.despine(ax=ax)
 
     def _plot_improved_model_usage(self, results: Dict[str, Any], ax):
         """Plot improved small vs large model usage"""
@@ -243,24 +312,35 @@ class ResultsVisualizer:
                 large_usage.append((1 - util['small_llm_usage']) * 100)
 
         # Create stacked bar chart
-        bars1 = ax.bar(test_names, small_usage, color='#4CAF50', label='Small LLM')
-        bars2 = ax.bar(test_names, large_usage, bottom=small_usage, color='#2196F3', label='Large LLM')
+        bars1 = ax.bar(test_names, small_usage, 
+                       color=self.palette['baseline_primary'], edgecolor='black',
+                       label='Small LLM')
+        bars2 = ax.bar(test_names, large_usage, bottom=small_usage, 
+                       color=self.palette['compound_primary'], edgecolor='black',
+                       label='Large LLM')
 
-        ax.set_ylabel('Usage (%)')
-        ax.set_title('Model Usage Distribution')
+        ax.set_ylabel('Usage')
+        ax.set_title('Model Usage Distribution', pad=20)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.legend(frameon=True, facecolor='white', framealpha=0.7)
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax.set_ylim(0, 100)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
 
         # Add percentage labels directly on the bars
-        for i, (small, large) in enumerate(zip(small_usage, large_usage)):
-            # Add small LLM label only if big enough
-            if small > 10:
-                ax.text(i, small / 2, f"Small LLM\n{small:.1f}%",
-                        ha='center', va='center', color='white', fontweight='bold')
-
-            # Add large LLM label only if big enough
-            if large > 10:
-                ax.text(i, small + large / 2, f"Large LLM\n{large:.1f}%",
-                        ha='center', va='center', color='white', fontweight='bold')
+        for bar in bars1:
+            h = bar.get_height()
+            if h > 5:
+                ax.text(bar.get_x() + bar.get_width() / 2., h / 2., f"{h:.1f}%",
+                        ha='center', va='center', color='white', fontsize=12, fontweight='bold',
+                        bbox=dict(facecolor='black', alpha=0.5, boxstyle='round,pad=0.2'))
+        for bar in bars2:
+            h = bar.get_height()
+            h_bottom = bar.get_y()
+            if h > 5:
+                ax.text(bar.get_x() + bar.get_width() / 2., h_bottom + h / 2., f"{h:.1f}%",
+                        ha='center', va='center', color='white', fontweight='bold', fontsize=12)
+        sns.despine(ax=ax)
 
     def _plot_improved_latency_comparison(self, results: Dict[str, Any], ax):
         """Plot improved latency comparison with speedup values"""
@@ -278,39 +358,38 @@ class ResultsVisualizer:
                 speedup.append(times['speedup'])
 
         x = np.arange(len(test_names))
-        width = 0.35
+        width = 0.4
 
-        compound_bars = ax.bar(x - width / 2, compound_time, width, color='#4CAF50', label='Compound')
-        baseline_bars = ax.bar(x + width / 2, baseline_time, width, color='#2196F3', label='Baseline')
+        compound_bars = ax.bar(x - width / 2, compound_time, width, 
+                               color=self.palette['compound_primary'], edgecolor='black',
+                               label='Compound Latency')
+        baseline_bars = ax.bar(x + width / 2, baseline_time, width, 
+                               color=self.palette['baseline_primary'], edgecolor='black',
+                               label='Baseline Latency')
 
         ax.set_ylabel('Latency (ms)')
-        ax.set_title('Latency Comparison (with Speedup Factor)')
+        ax.set_title('Latency Comparison and Speedup', pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
 
-        # Add direct labels
-        for i, bar in enumerate(compound_bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 5,
-                    f"Compound\n{compound_time[i]:.0f} ms",
-                    ha='center', va='bottom', fontsize=9)
+        self._add_bar_labels(ax, fmt='%.0f ms', padding=3, fontsize=12)
 
-        for i, bar in enumerate(baseline_bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 5,
-                    f"Baseline\n{baseline_time[i]:.0f} ms",
-                    ha='center', va='bottom', fontsize=9)
+        ax.set_ylim(0, max(max(compound_time), max(baseline_time)) * 1.2)
 
-        # Add speedup text between bars with arrows
-        for i in range(len(x)):
-            mid_x = (compound_bars[i].get_x() + compound_bars[i].get_width() + baseline_bars[i].get_x()) / 2
-            max_height = max(compound_bars[i].get_height(), baseline_bars[i].get_height())
-            ax.text(mid_x, max_height + 20,
-                    f"Speedup: {speedup[i]:.1f}x",
-                    ha='center', va='bottom', color='#E91E63', fontweight='bold')
+        # Plot speedup on a secondary y-axis
+        ax2 = ax.twinx()
+        ax2.plot(x, speedup, color=self.palette['highlight_positive'], marker='D', markersize=6, linestyle='--', label='Speedup Factor')
+        ax2.set_ylabel('Speedup (X)', color=self.palette['highlight_positive'])
+        ax2.tick_params(axis='y', colors=self.palette['highlight_positive'])
+        ax2.set_ylim(bottom=1)
 
-        # Set a reasonable y-limit to accommodate labels
-        ax.set_ylim(0, max(max(compound_time), max(baseline_time)) * 1.3)
+        # Combine legends
+        lines, labels = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines + lines2, labels + labels2, loc='upper left', frameon=True, facecolor='white', framealpha=0.7)
+        sns.despine(ax=ax, right=False)
+        sns.despine(ax=ax2, left=False)
 
     def _plot_improved_cost_savings(self, results: Dict[str, Any], ax):
         """Plot improved cost savings with percentages"""
@@ -330,38 +409,38 @@ class ResultsVisualizer:
                 savings_amount.append(costs['savings']['amount'])
 
         x = np.arange(len(test_names))
-        width = 0.35
+        width = 0.4
 
-        compound_bars = ax.bar(x - width / 2, compound_cost, width, color='#4CAF50', label='Compound')
-        baseline_bars = ax.bar(x + width / 2, baseline_cost, width, color='#2196F3', label='Baseline')
+        compound_bars = ax.bar(x - width / 2, compound_cost, width, 
+                               color=self.palette['compound_primary'], edgecolor='black',
+                               label='Compound Cost')
+        baseline_bars = ax.bar(x + width / 2, baseline_cost, width, 
+                               color=self.palette['baseline_primary'], edgecolor='black',
+                               label='Baseline Cost')
 
-        ax.set_ylabel('Cost ($)')
-        ax.set_title('API Cost Comparison (with Savings)')
+        ax.set_ylabel('Total Cost ($)')
+        ax.set_title('API Cost Comparison and Savings', pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
 
-        # Add direct labels
-        for i, bar in enumerate(compound_bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 0.01,
-                    f"Compound\n${compound_cost[i]:.4f}",
-                    ha='center', va='bottom', fontsize=9)
+        self._add_bar_labels(ax, fmt='$%.4f', padding=3, fontsize=12)
+        ax.set_ylim(0, max(max(compound_cost), max(baseline_cost)) * 1.2)
 
-        for i, bar in enumerate(baseline_bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 0.01,
-                    f"Baseline\n${baseline_cost[i]:.4f}",
-                    ha='center', va='bottom', fontsize=9)
+        # Plot savings percentage on a secondary y-axis
+        ax2 = ax.twinx()
+        ax2.plot(x, savings_pct, color=self.palette['highlight_positive'], marker='D', markersize=6, linestyle='--', label='Savings (%)')
+        ax2.set_ylabel('Savings (%)', color=self.palette['highlight_positive'])
+        ax2.tick_params(axis='y', colors=self.palette['highlight_positive'])
+        ax2.set_ylim(0, 105)
+        ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
 
-        # Add savings text below the bars
-        for i in range(len(x)):
-            mid_x = (compound_bars[i].get_x() + compound_bars[i].get_width() + baseline_bars[i].get_x()) / 2
-            ax.text(mid_x, 0.02,
-                    f"Savings: ${savings_amount[i]:.4f} ({savings_pct[i]:.1f}%)",
-                    ha='center', va='bottom', color='#E91E63', fontweight='bold')
-
-        # Set a reasonable y-limit to accommodate labels
-        ax.set_ylim(0, max(max(compound_cost), max(baseline_cost)) * 1.3)
+        # Combine legends
+        lines, labels = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines + lines2, labels + labels2, loc='upper left', frameon=True, facecolor='white', framealpha=0.7)
+        sns.despine(ax=ax, right=False)
+        sns.despine(ax=ax2, left=False)
 
     def _plot_improved_accuracy_by_difficulty(self, results: Dict[str, Any], ax):
         """Plot improved accuracy by difficulty"""
@@ -385,29 +464,21 @@ class ResultsVisualizer:
         width = 0.2  # narrower bars
 
         # Plot the four types of bars
-        ax.bar(x - width * 1.5, easy_compound, width, color='#4CAF50', label='Compound (Easy)')
-        ax.bar(x - width / 2, easy_baseline, width, color='#81C784', label='Baseline (Easy)')
-        ax.bar(x + width / 2, hard_compound, width, color='#2196F3', label='Compound (Hard)')
-        ax.bar(x + width * 1.5, hard_baseline, width, color='#64B5F6', label='Baseline (Hard)')
+        ax.bar(x - width * 1.5, easy_compound, width, color=self.palette['compound_primary'], edgecolor='black', label='Compound (Easy)')
+        ax.bar(x - width / 2, easy_baseline, width, color=self.palette['baseline_primary'], edgecolor='black', label='Baseline (Easy)')
+        ax.bar(x + width / 2, hard_compound, width, color=self.palette['compound_secondary'], edgecolor='black', label='Compound (Hard)')
+        ax.bar(x + width * 1.5, hard_baseline, width, color=self.palette['baseline_secondary'], edgecolor='black', label='Baseline (Hard)')
 
-        # Add direct labels instead of a complex legend
-        # Create a custom box at the top for the legend
-        textstr = '\n'.join((
-            'Easy Questions:',
-            '  ■ Compound System (dark green)',
-            '  ■ Baseline (light green)',
-            'Hard Questions:',
-            '  ■ Compound System (dark blue)',
-            '  ■ Baseline (light blue)'))
-
-        props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=9,
-                verticalalignment='top', bbox=props)
-
-        ax.set_ylabel('Accuracy (%)')
-        ax.set_title('Accuracy by Question Difficulty')
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Accuracy by Question Difficulty', pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.legend(frameon=True, facecolor='white', framealpha=0.7)
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax.set_ylim(0, 105)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
+        self._add_bar_labels(ax, fmt='%.1f%%', padding=3, fontsize=10)
+        sns.despine(ax=ax)
 
     def _plot_improved_token_usage(self, results: Dict[str, Any], ax):
         """Plot improved token usage comparison"""
@@ -433,42 +504,22 @@ class ResultsVisualizer:
         width = 0.2
 
         # Plot with improved colors and spacing
-        compound_in_bars = ax.bar(x - width * 1.5, compound_input, width, color='#4CAF50',
-                                  label='Compound Input')
-        compound_out_bars = ax.bar(x - width / 2, compound_output, width, color='#66BB6A',
-                                   label='Compound Output')
-        baseline_in_bars = ax.bar(x + width / 2, baseline_input, width, color='#2196F3',
-                                  label='Baseline Input')
-        baseline_out_bars = ax.bar(x + width * 1.5, baseline_output, width, color='#64B5F6',
-                                   label='Baseline Output')
+        ax.bar(x - width * 1.5, compound_input, width, color=self.palette['compound_primary'], edgecolor='black', label='Compound Input')
+        ax.bar(x - width / 2, compound_output, width, color=self.palette['compound_secondary'], edgecolor='black', label='Compound Output')
+        ax.bar(x + width / 2, baseline_input, width, color=self.palette['baseline_primary'], edgecolor='black', label='Baseline Input')
+        ax.bar(x + width * 1.5, baseline_output, width, color=self.palette['baseline_secondary'], edgecolor='black', label='Baseline Output')
 
         ax.set_ylabel('Token Count')
-        ax.set_title('Token Usage Comparison')
+        ax.set_title('Token Usage Comparison', pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.legend(frameon=True, facecolor='white', framealpha=0.7)
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
 
-        # Create a custom box for the legend
-        textstr = '\n'.join((
-            'Compound System:',
-            '  ■ Input Tokens (dark green)',
-            '  ■ Output Tokens (light green)',
-            'Baseline:',
-            '  ■ Input Tokens (dark blue)',
-            '  ■ Output Tokens (light blue)'))
+        self._add_bar_labels(ax, fmt='%d', padding=3, fontsize=10)
 
-        props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-        ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=9,
-                verticalalignment='top', bbox=props)
-
-        # Add total token count labels
-        for i, result_name in enumerate(test_names):
-            compound_total = compound_input[i] + compound_output[i]
-            baseline_total = baseline_input[i] + baseline_output[i]
-            savings_pct = (baseline_total - compound_total) / baseline_total * 100 if baseline_total > 0 else 0
-
-            ax.text(i, max(compound_input[i], compound_output[i], baseline_input[i], baseline_output[i]) * 1.05,
-                    f"Token Savings: {savings_pct:.1f}%",
-                    ha='center', va='bottom', color='#E91E63', fontweight='bold')
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.15)
+        sns.despine(ax=ax)
 
     def _plot_radar_chart(self, results: Dict[str, Any], ax):
         """Create a radar chart comparing key metrics across configurations"""
@@ -493,8 +544,8 @@ class ResultsVisualizer:
             metrics['Accuracy'].append(comp['accuracy']['compound'])
             metrics['Router Accuracy'].append(comp['router_performance']['accuracy'])
             metrics['Small LLM Usage'].append(comp['resource_utilization']['small_llm_usage'])
-            metrics['Cost Savings'].append(comp['api_costs']['savings']['percentage'] / 100)
-            metrics['Speedup'].append(min(comp['average_time_ms']['speedup'] / 5, 1.0))  # Normalize to max of 1
+            metrics['Cost Savings'].append(max(0, comp['api_costs']['savings']['percentage'] / 100))
+            metrics['Speedup'].append(min(max(0, comp['average_time_ms']['speedup'] -1) / 4, 1.0))  # Normalize speedup (1x to 5x scale)
 
         if not test_names:
             ax.text(0.5, 0.5, "No data available", ha='center', va='center', transform=ax.transAxes)
@@ -514,83 +565,86 @@ class ResultsVisualizer:
 
         # Draw category labels at the angle of each category
         ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(categories)
+        ax.set_xticklabels(categories, fontsize=16)
 
         # Draw y-axis labels (0-100%)
+        ax.set_rlabel_position(180) # Move radial labels to avoid overlap
         ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
-        ax.set_yticklabels(['20%', '40%', '60%', '80%', '100%'])
+        ax.set_yticklabels(['20%', '40%', '60%', '80%', '100%'], color="dimgray", size=12)
         ax.set_ylim(0, 1)
 
         # Plot each configuration as a separate line
+        color_cycle = plt.cm.get_cmap('viridis', len(test_names))
         for i, name in enumerate(test_names):
             values = [metrics[cat][i] for cat in categories]
             values += values[:1]  # Close the loop
 
             # Plot the configuration line
-            ax.plot(angles, values, linewidth=2, linestyle='solid', label=name)
-            ax.fill(angles, values, alpha=0.1)
+            ax.plot(angles, values, color=color_cycle(i), linewidth=2.5, linestyle='solid', label=name)
+            ax.fill(angles, values, color=color_cycle(i), alpha=0.2)
 
         # Add legend
-        ax.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
+        ax.legend(loc='upper right', bbox_to_anchor=(1.35, 1.15), frameon=True, facecolor='white', framealpha=0.7)
 
         # Add title
-        plt.title('Multi-Metric Comparison', size=15, y=1.1)
+        ax.set_title('Multi-Metric Comparison', size=24, y=1.2)
 
-    def create_summary_dashboard(self, results: Dict[str, Any], title: str = "CompoundAI System Results"):
+    def create_summary_dashboard(self, results: Dict[str, Any], title: str = "CompoundAI System Performance Dashboard"):
         """
-        Create a comprehensive dashboard of results.
+        Create a redesigned, comprehensive dashboard of results.
 
         Args:
             results: Dictionary of test results
             title: Dashboard title
         """
-        # Create figure
-        fig = plt.figure(figsize=(20, 15))
-        gs = GridSpec(3, 3, figure=fig)
+        # Create a figure with a more spacious layout (4 rows, 2 columns)
+        fig = plt.figure(figsize=(22, 28))
+        gs = GridSpec(4, 2, figure=fig, hspace=0.8, wspace=0.4)
+
+        fig.suptitle(title, fontsize=40, y=0.98, weight='bold')
 
         # Plot accuracy comparison
         ax1 = fig.add_subplot(gs[0, 0])
         self._plot_improved_accuracy_comparison(results, ax1)
 
-        # Plot router performance
-        ax2 = fig.add_subplot(gs[0, 1])
-        self._plot_improved_router_performance(results, ax2)
-
-        # Plot model usage
-        ax3 = fig.add_subplot(gs[0, 2])
-        self._plot_improved_model_usage(results, ax3)
-
         # Plot latency comparison
-        ax4 = fig.add_subplot(gs[1, 0])
-        self._plot_improved_latency_comparison(results, ax4)
+        ax2 = fig.add_subplot(gs[0, 1])
+        self._plot_improved_latency_comparison(results, ax2)
 
         # Plot cost savings
-        ax5 = fig.add_subplot(gs[1, 1])
-        self._plot_improved_cost_savings(results, ax5)
+        ax3 = fig.add_subplot(gs[1, 0])
+        self._plot_improved_cost_savings(results, ax3)
+
+        # Plot model usage
+        ax4 = fig.add_subplot(gs[1, 1])
+        self._plot_improved_model_usage(results, ax4)
+
+        # Plot router accuracy
+        ax5 = fig.add_subplot(gs[2, 0])
+        self._plot_router_accuracy(results, ax5)
+
+        # Plot router errors
+        ax6 = fig.add_subplot(gs[2, 1])
+        self._plot_router_errors(results, ax6)
 
         # Plot accuracy by difficulty
-        ax6 = fig.add_subplot(gs[1, 2])
-        self._plot_improved_accuracy_by_difficulty(results, ax6)
+        ax7 = fig.add_subplot(gs[3, 0])
+        self._plot_improved_accuracy_by_difficulty(results, ax7)
 
         # Plot token usage
-        ax7 = fig.add_subplot(gs[2, 0:2])
-        self._plot_improved_token_usage(results, ax7)
-
-        # Plot radar chart
-        ax8 = fig.add_subplot(gs[2, 2], projection='polar')
-        self._plot_radar_chart(results, ax8)
-
-        # Set title
-        fig.suptitle(title, fontsize=24, y=0.98)
+        ax8 = fig.add_subplot(gs[3, 1])
+        self._plot_improved_token_usage(results, ax8)
 
         # Adjust layout
-        fig.tight_layout(rect=[0, 0, 1, 0.96])
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
         # Save figure
-        plt.savefig(os.path.join(self.output_dir, "dashboard.png"), dpi=300, bbox_inches='tight')
+        save_path = os.path.join(self.output_dir, "summary_dashboard.png")
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
+        print(f"Summary dashboard saved to {save_path}")
 
-        # Save individual visualizations
+        # Save individual visualizations as they are still valuable
         self.save_individual_visualizations(results)
 
     def create_detailed_report(self, results: Dict[str, Any]):
@@ -713,8 +767,11 @@ class ResultsVisualizer:
 
         # Create pie chart
         ax.pie([correct, incorrect], labels=['Correct', 'Incorrect'],
-               autopct='%1.1f%%', startangle=90, colors=['#4CAF50', '#F44336'])
-        ax.set_title('Accuracy')
+               autopct='%1.1f%%', startangle=90,
+               colors=[self.palette['compound_primary'], self.palette['highlight_positive']],
+               wedgeprops={'edgecolor': 'black', 'linewidth': 1},
+               textprops={'fontsize': 14, 'fontweight': 'bold', 'color': 'white'})
+        ax.set_title('Overall Accuracy', fontsize=18, pad=20)
 
     def _plot_router_confusion(self, result: Dict[str, Any], ax):
         """Plot router confusion matrix"""
@@ -745,11 +802,11 @@ class ResultsVisualizer:
 
         # Plot heatmap
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                    xticklabels=['Easy', 'Hard'],
-                    yticklabels=['Easy', 'Hard'], ax=ax)
-        ax.set_xlabel('Predicted')
-        ax.set_ylabel('True')
-        ax.set_title('Router Confusion Matrix')
+                    xticklabels=['Predicted Easy', 'Predicted Hard'],
+                    yticklabels=['True Easy', 'True Hard'], ax=ax, annot_kws={"size": 16}, cbar=True)
+        ax.set_xlabel('Predicted Difficulty', fontsize=14)
+        ax.set_ylabel('True Difficulty', fontsize=14)
+        ax.set_title('Router Confusion Matrix', fontsize=18, pad=20)
 
     def _plot_latency_distribution(self, result: Dict[str, Any], ax):
         """Plot latency distribution"""
@@ -761,14 +818,17 @@ class ResultsVisualizer:
         latencies = [r.get('total_time_ms', 0) for r in result['compound_results']]
 
         # Plot histogram
-        ax.hist(latencies, bins=20, alpha=0.7)
-        ax.axvline(np.mean(latencies), color='r', linestyle='dashed', linewidth=1,
-                   label=f'Mean: {np.mean(latencies):.2f}ms')
+        sns.histplot(latencies, bins=25, ax=ax, color=self.palette['compound_primary'], kde=True)
+        mean_latency = np.mean(latencies)
+        ax.axvline(mean_latency, color=self.palette['highlight_positive'], linestyle='dashed', linewidth=2.5,
+                   label=f'Mean: {mean_latency:.2f}ms')
 
         ax.set_xlabel('Latency (ms)')
-        ax.set_ylabel('Count')
-        ax.set_title('Latency Distribution')
+        ax.set_ylabel('Frequency')
+        ax.set_title('Latency Distribution', fontsize=18, pad=20)
         ax.legend()
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        sns.despine(ax=ax)
 
     def _plot_token_breakdown(self, result: Dict[str, Any], ax):
         """Plot token usage breakdown"""
@@ -787,16 +847,19 @@ class ResultsVisualizer:
 
         # Plot grouped bar chart
         x = np.arange(len(categories))
-        width = 0.35
+        width = 0.4
 
-        ax.bar(x - width / 2, compound_values, width, label='Compound')
-        ax.bar(x + width / 2, baseline_values, width, label='Baseline')
+        ax.bar(x - width / 2, compound_values, width, label='Compound', color=self.palette['compound_primary'], edgecolor='black')
+        ax.bar(x + width / 2, baseline_values, width, label='Baseline', color=self.palette['baseline_primary'], edgecolor='black')
 
-        ax.set_ylabel('Token Count')
-        ax.set_title('Token Usage Breakdown')
+        ax.set_ylabel('Total Token Count')
+        ax.set_title('Token Usage Breakdown', fontsize=18, pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(categories)
         ax.legend()
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        self._add_bar_labels(ax, fmt='%d', padding=3)
+        sns.despine(ax=ax)
 
     def _plot_performance_by_question(self, result: Dict[str, Any], ax):
         """Plot performance by question type"""
@@ -828,17 +891,20 @@ class ResultsVisualizer:
                 counts.append(0)
 
         # Plot bar chart
-        ax.bar(bin_labels, accuracies, alpha=0.7)
+        ax.bar(bin_labels, accuracies, color=self.palette['compound_primary'], alpha=0.8, width=0.7, edgecolor='black')
 
         # Add count labels
         for i, (acc, count) in enumerate(zip(accuracies, counts)):
             if count > 0:
-                ax.text(i, acc + 2, f"n={count}", ha='center')
+                ax.text(i, acc + 2, f"n={count}", ha='center', fontsize=12)
 
-        ax.set_xlabel('Query Length')
-        ax.set_ylabel('Accuracy (%)')
-        ax.set_title('Performance by Query Length')
+        ax.set_xlabel('Query Length Category')
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Performance by Query Length', fontsize=18, pad=20)
         ax.set_ylim(0, 105)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        sns.despine(ax=ax)
 
     def _plot_error_analysis(self, result: Dict[str, Any], ax):
         """Plot error analysis"""
@@ -865,25 +931,28 @@ class ResultsVisualizer:
         x = np.arange(len(categories))
         width = 0.7
 
-        ax.bar(x, correct, width, label='Correct')
-        ax.bar(x, incorrect, width, bottom=correct, label='Incorrect')
+        ax.bar(x, correct, width, label='Correct', color=self.palette['compound_primary'], edgecolor='black')
+        ax.bar(x, incorrect, width, bottom=correct, label='Incorrect', color=self.palette['highlight_positive'], edgecolor='black')
 
         # Add percentage labels
         for i in range(len(categories)):
             total = correct[i] + incorrect[i]
             if total > 0:
                 pct_correct = correct[i] / total * 100
-                ax.text(i, correct[i] / 2, f"{pct_correct:.1f}%", ha='center', va='center')
+                if correct[i] / total > 0.05: # Only label if space
+                    ax.text(i, correct[i] / 2, f"{pct_correct:.1f}%", ha='center', va='center', color='white', fontsize=12, fontweight='bold')
 
-                if incorrect[i] > 0:
+                if incorrect[i] > 0 and incorrect[i] / total > 0.05:
                     pct_incorrect = incorrect[i] / total * 100
-                    ax.text(i, correct[i] + incorrect[i] / 2, f"{pct_incorrect:.1f}%", ha='center', va='center')
+                    ax.text(i, correct[i] + incorrect[i] / 2, f"{pct_incorrect:.1f}%", ha='center', va='center', color='black', fontsize=12, fontweight='bold')
 
         ax.set_ylabel('Count')
-        ax.set_title('Error Analysis by Model and Question Difficulty')
+        ax.set_title('Error Analysis by Model and Question Difficulty', fontsize=18, pad=20)
         ax.set_xticks(x)
         ax.set_xticklabels(categories, rotation=45, ha='right')
         ax.legend()
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        sns.despine(ax=ax)
 
     def _add_metrics_table(self, result: Dict[str, Any], ax):
         """Add key metrics table"""
@@ -916,19 +985,24 @@ class ResultsVisualizer:
             cellText=table_data,
             cellLoc='center',
             loc='center',
-            colWidths=[0.25, 0.25, 0.25, 0.25]
+            colWidths=[0.3, 0.2, 0.2, 0.3]
         )
 
         # Style table
         table.auto_set_font_size(False)
-        table.set_fontsize(12)
-        table.scale(1, 2)
+        table.set_fontsize(14)
+        table.scale(1, 2.5)
 
-        # Color header row
+        # Color header row and bold text
         for i in range(len(table_data[0])):
             table[(0, i)].set_facecolor('#f0f0f0')
+            table[(0, i)].set_text_props(weight='bold')
 
-        ax.set_title('Key Metrics Summary', pad=20)
+        # Bold first column
+        for i in range(1, len(table_data)):
+            table[(i, 0)].set_text_props(weight='bold')
+
+        ax.set_title('Key Metrics Summary', pad=40, fontsize=22)
 
     def create_comparison_visualization(self, results: Dict[str, Any], focus_metrics: List[str] = None):
         """
@@ -987,15 +1061,17 @@ class ResultsVisualizer:
             plt.savefig(os.path.join(comparison_dir, f"comparison_{metric}.png"), dpi=300, bbox_inches='tight')
             plt.close()
 
-            # Set title
-        fig.suptitle(f"Comparison of Different Configurations", fontsize=16, y=0.98)
+        # Set title
+        fig.suptitle(f"Comparison of Test Configurations", fontsize=24, y=1.02)
 
         # Adjust layout
-        fig.tight_layout(rect=[0, 0, 1, 0.96])
+        fig.tight_layout(rect=[0, 0, 1, 0.97])
 
         # Save figure
-        plt.savefig(os.path.join(self.output_dir, "configuration_comparison.png"), dpi=300, bbox_inches='tight')
+        save_path = os.path.join(self.output_dir, "configuration_comparison.png")
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
+        print(f"Configuration comparison saved to {save_path}")
 
     def _plot_comparison_accuracy(self, results: Dict[str, Any], ax):
         """Plot accuracy comparison across configs"""
@@ -1017,16 +1093,24 @@ class ResultsVisualizer:
         })
 
         # Plot
-        df.plot(x='Configuration', y=['Compound System', 'Baseline'], kind='bar', ax=ax)
+        df.plot(x='Configuration', y=['Compound System', 'Baseline'], kind='bar', ax=ax,
+                color=[self.palette['compound_primary'], self.palette['baseline_primary']], 
+                edgecolor='black',
+                width=0.8)
 
-        ax.set_ylabel('Accuracy (%)')
-        ax.set_title('Accuracy Comparison Across Configurations')
+        ax.set_ylabel('Accuracy')
+        ax.set_title('Accuracy Comparison Across Configurations', fontsize=18, pad=20)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
 
         # Add accuracy improvement labels
         for i, (comp, base) in enumerate(zip(compound_acc, baseline_acc)):
             diff = comp - base
-            ax.text(i, max(comp, base) + 1, f"{diff:+.1f}%", ha='center')
+            ax.text(i, max(comp, base) + 2, f"{diff:+.1f}pp", ha='center', color=self.palette['highlight_positive'], fontweight='bold')
+
+        ax.set_ylim(bottom=0)
+        sns.despine(ax=ax)
 
     def _plot_comparison_latency(self, results: Dict[str, Any], ax):
         """Plot latency comparison across configs"""
@@ -1052,21 +1136,29 @@ class ResultsVisualizer:
         })
 
         # Plot latencies
-        df.plot(x='Configuration', y=['Compound System', 'Baseline'], kind='bar', ax=ax)
+        df.plot(x='Configuration', y=['Compound System', 'Baseline'], kind='bar', ax=ax,
+                color=[self.palette['compound_primary'], self.palette['baseline_primary']], 
+                edgecolor='black',
+                width=0.8)
 
         # Plot speedup on secondary axis
         ax2 = ax.twinx()
-        ax2.plot(np.arange(len(test_names)), df['Speedup'], 'o-', color='green', label='Speedup')
+        ax2.plot(ax.get_xticks(), df['Speedup'], 'o-', color=self.palette['highlight_positive'], label='Speedup Factor (X)', markersize=8)
 
         ax.set_ylabel('Latency (ms)')
-        ax2.set_ylabel('Speedup Factor')
-        ax.set_title('Latency Comparison Across Configurations')
+        ax2.set_ylabel('Speedup Factor', color=self.palette['highlight_positive'])
+        ax2.tick_params(axis='y', colors=self.palette['highlight_positive'])
+        ax.set_title('Latency Comparison Across Configurations', fontsize=18, pad=20)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
 
         # Combine legends
         lines1, labels1 = ax.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+        ax2.set_ylim(bottom=0)
+        sns.despine(ax=ax, right=False)
+        sns.despine(ax=ax2, left=False)
 
     def _plot_comparison_cost_savings(self, results: Dict[str, Any], ax):
         """Plot cost savings comparison across configs"""
@@ -1092,21 +1184,30 @@ class ResultsVisualizer:
         })
 
         # Plot costs
-        df.plot(x='Configuration', y=['Compound System', 'Baseline'], kind='bar', ax=ax)
+        df.plot(x='Configuration', y=['Compound System', 'Baseline'], kind='bar', ax=ax,
+                color=[self.palette['compound_primary'], self.palette['baseline_primary']],
+                edgecolor='black', 
+                width=0.8)
 
         # Plot savings percentage on secondary axis
         ax2 = ax.twinx()
-        ax2.plot(np.arange(len(test_names)), df['Savings'], 'o-', color='green', label='Savings %')
+        ax2.plot(ax.get_xticks(), df['Savings'], 'o-', color=self.palette['highlight_positive'], label='Savings (%)', markersize=8)
 
         ax.set_ylabel('Cost ($)')
-        ax2.set_ylabel('Savings (%)')
-        ax.set_title('API Cost Comparison Across Configurations')
+        ax2.set_ylabel('Savings (%)', color=self.palette['highlight_positive'])
+        ax2.tick_params(axis='y', colors=self.palette['highlight_positive'])
+        ax.set_title('API Cost Comparison Across Configurations', fontsize=18, pad=20)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
 
         # Combine legends
         lines1, labels1 = ax.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+        ax2.set_ylim(0, 105)
+        sns.despine(ax=ax, right=False)
+        sns.despine(ax=ax2, left=False)
 
     def _plot_comparison_router_accuracy(self, results: Dict[str, Any], ax):
         """Plot router accuracy comparison across configs"""
@@ -1137,21 +1238,28 @@ class ResultsVisualizer:
         # Plot error counts on secondary axis
         ax2 = ax.twinx()
         width = 0.2
-        ax2.bar(np.arange(len(test_names)) - width / 2, df['False Positives'], width,
-                color='red', label='False Positives')
-        ax2.bar(np.arange(len(test_names)) + width / 2, df['False Negatives'], width,
-                color='orange', label='False Negatives')
+        x = np.arange(len(test_names))
+        ax2.bar(x - width / 2, df['False Positives'], width,
+                color=self.palette['false_positive'], edgecolor='black', label='False Positives')
+        ax2.bar(x + width / 2, df['False Negatives'], width,
+                color=self.palette['false_negative'], edgecolor='black', label='False Negatives')
 
-        ax.set_ylabel('Accuracy (%)')
-        ax2.set_ylabel('Count')
-        ax.set_title('Router Performance Across Configurations')
+        ax.set_ylabel('Accuracy')
+        ax2.set_ylabel('Error Count')
+        ax.set_title('Router Performance Across Configurations', fontsize=18, pad=20)
         ax.set_xticks(np.arange(len(test_names)))
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
 
         # Combine legends
         lines1, labels1 = ax.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+        ax.set_ylim(0, 105)
+        ax2.set_ylim(bottom=0)
+        sns.despine(ax=ax, right=False)
+        sns.despine(ax=ax2, left=False)
 
     def _plot_comparison_model_usage(self, results: Dict[str, Any], ax):
         """Plot model usage comparison across configs"""
@@ -1175,8 +1283,16 @@ class ResultsVisualizer:
 
         # Create stacked bar chart
         df.plot(x='Configuration', y=['Small LLM', 'Large LLM'],
-                kind='bar', stacked=True, ax=ax)
+                kind='bar', stacked=True, ax=ax,
+                color=[self.palette['baseline_primary'], self.palette['compound_primary']],
+                edgecolor='black',
+                width=0.8)
 
-        ax.set_ylabel('Usage (%)')
-        ax.set_title('Model Usage Distribution Across Configurations')
+        ax.set_ylabel('Usage')
+        ax.set_title('Model Usage Distribution Across Configurations', fontsize=18, pad=20)
         ax.set_xticklabels(test_names, rotation=45, ha='right')
+        ax.legend(title='LLM Type')
+        ax.grid(axis='y', linestyle=':', alpha=0.5)
+        ax.set_ylim(0, 100)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0f}%'))
+        sns.despine(ax=ax)

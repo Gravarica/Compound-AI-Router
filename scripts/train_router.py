@@ -1,7 +1,7 @@
 import os
 import argparse
 import json
-from query_router import QueryRouter
+from src.routing.router import QueryRouter
 from src.data.dataloader import ARCDataManager
 import logging
 

@@ -1,8 +1,9 @@
 # src/routing/router_factory.py
 from typing import Dict, Any, Optional
 
-from src.routing import BaseRouter
-from src.routing import TransformerRouter
+from src.routing.base_router import BaseRouter
+from src.routing.transformer_router import TransformerRouter
+from src.routing.random_router import RandomRouter
 from src.utils.logging import setup_logging
 
 logger = setup_logging(name="router_factory")
@@ -24,13 +25,19 @@ class RouterFactory:
         Raises:
             ValueError: If router_type is not supported
         """
-        if router_type.lower() == 'transformer':
+        router_type = router_type.lower()
+        if router_type == 'transformer':
             logger.info(f"Creating TransformerRouter with config: {config}")
             return TransformerRouter(
                 model_name_or_path=config['model_name_or_path'],
                 num_labels=config.get('num_labels', 2),
                 device=config.get('device'),
                 max_length=config.get('max_length', 512)
+            )
+        elif router_type == 'random':
+            logger.info(f"Creating RandomRouter with config: {config}")
+            return RandomRouter(
+                seed=config.get('seed')
             )
         else:
             raise ValueError(f"Unsupported router type: {router_type}")
