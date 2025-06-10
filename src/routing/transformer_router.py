@@ -69,7 +69,10 @@ class TransformerRouter(BaseRouter):
             logger.error(f"Error loading model and tokenizer: {e}")
             raise
 
-    def predict_difficulty(self, query_text: str, confidence_threshold: float = 0.7) -> Tuple[str, float]:
+    def predict_difficulty(self, query_text: Optional[str] = None, query_id: Optional[str] = None, confidence_threshold: float = 0.7, **kwargs) -> Tuple[str, float]:
+
+        if query_text is None:
+            raise ValueError("TransformerRouter requires query_text for prediction.")
 
         try:
             inputs = self.tokenizer(

@@ -1,0 +1,38 @@
+# @package _global_
+
+# Default configuration for evaluation runs
+
+hydra:
+  run:
+    dir: outputs/evaluations/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+# --- Experiment Configuration ---
+experiment_name: "default_run"
+output_dir: "results/${experiment_name}"
+
+# --- System Configuration ---
+# Router can be 'transformer', 'random', 'oracle', or 'baseline'
+run_mode: "compound"
+
+router:
+  type: "transformer"
+  model_path: "model-store/router_model"
+  confidence_threshold: 0.8
+  # seed is for 'random' router
+  seed: 42
+
+small_llm:
+  type: "ollama"
+  model_name: "llama3"
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+# --- Dataset Configuration ---
+evaluation:
+  num_samples: 500 # Set to null to use all samples
+  seed: 42
+  output_file: "${output_dir}/${experiment_name}_results.json" 

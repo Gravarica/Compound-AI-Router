@@ -4,7 +4,7 @@ from typing import Tuple, Optional, Dict, Any
 class BaseRouter(ABC):
 
     @abstractmethod
-    def predict_difficulty(self, query_text: str, confidence_threshold: float = 0.7) -> Tuple[str, float]:
+    def predict_difficulty(self, query_text: Optional[str] = None, query_id: Optional[str] = None, **kwargs) -> Tuple[str, float]:
         pass
 
     @abstractmethod

@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "baseline_large_llm"
+run_mode: "baseline"
+
+# Use the large_llm as the baseline model
+baseline_llm: ${large_llm}
+
+# Unset router and small_llm as they are not used
+router: null
+small_llm: null 

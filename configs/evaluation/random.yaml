@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "compound_random_router"
+run_mode: "compound"
+
+router:
+  type: "random"
+  seed: 42 

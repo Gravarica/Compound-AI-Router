@@ -62,7 +62,7 @@ class CompoundAIOrchestrator(BaseOrchestrator):
 
             # Step 2: Predict query difficulty
             self.metrics_collector.start_routing()
-            difficulty, confidence = self.router.predict_difficulty(router_prompt)
+            difficulty, confidence = self.router.predict_difficulty(query_text=router_prompt, query_id=query_id)
             self.metrics_collector.end_routing()
             logger.debug(f"Query {query_id} classified as {difficulty} with confidence {confidence:.4f}")
 

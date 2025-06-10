@@ -40,6 +40,10 @@ def save_results(results, filename="compound_system_results.json"):
     false_neg = sum(1 for r in results if r['true_difficulty'] == 'easy' and r['predicted_difficulty'] == 'hard')
     false_pos = sum(1 for r in results if r['true_difficulty'] == 'hard' and r['predicted_difficulty'] == 'easy')
 
+    # Token usage for the large LLM
+    large_llm_input_tokens = sum(r['resource_usage']['llm'].get('prompt_tokens', 0) for r in results if r['chosen_llm'] == 'large')
+    large_llm_output_tokens = sum(r['resource_usage']['llm'].get('completion_tokens', 0) for r in results if r['chosen_llm'] == 'large')
+
     # Average times
     avg_routing_time = sum(r['routing_time_ms'] for r in results) / len(results) if results else 0
     avg_inference_time = sum(r['llm_latency_ms'] for r in results) / len(results) if results else 0
@@ -66,6 +70,11 @@ def save_results(results, filename="compound_system_results.json"):
             "accuracy": router_accuracy,
             "false_positives": false_pos,
             "false_negatives": false_neg
+        },
+        "large_llm_token_usage": {
+            "input_tokens": large_llm_input_tokens,
+            "output_tokens": large_llm_output_tokens,
+            "total_tokens": large_llm_input_tokens + large_llm_output_tokens
         },
         "average_times_ms": {
             "routing": avg_routing_time,
@@ -101,6 +110,9 @@ def save_results(results, filename="compound_system_results.json"):
     print(f"\nAccuracy by true difficulty:")
     print(f"  Easy questions: {easy_accuracy:.2%} ({easy_correct}/{len(easy_queries)})")
     print(f"  Hard questions: {hard_accuracy:.2%} ({hard_correct}/{len(hard_queries)})")
+    print(f"\nLarge LLM Token Usage (Compound System):")
+    print(f"  Input Tokens: {large_llm_input_tokens}")
+    print(f"  Output Tokens: {large_llm_output_tokens}")
     print(f"\nAverage times:")
     print(f"  Routing: {avg_routing_time:.2f}ms")
     print(f"  Inference: {avg_inference_time:.2f}ms")

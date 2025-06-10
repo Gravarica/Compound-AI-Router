@@ -1,6 +1,6 @@
 # src/routing/random_router.py
 import random
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional
 from src.routing.base_router import BaseRouter
 
 class RandomRouter(BaseRouter):
@@ -18,13 +18,14 @@ class RandomRouter(BaseRouter):
             random.seed(seed)
         self._model_info = {"type": "RandomRouter", "seed": seed}
 
-    def predict_difficulty(self, query_text: str, confidence_threshold: float = 0.5) -> Tuple[str, float]:
+    def predict_difficulty(self, query_text: Optional[str] = None, query_id: Optional[str] = None, **kwargs) -> Tuple[str, float]:
         """
         Randomly predicts the difficulty of a query as 'easy' or 'hard'.
 
         Args:
             query_text: The query text (unused in this router).
-            confidence_threshold: The threshold for prediction (unused in this router).
+            query_id: The query ID (unused in this router).
+            **kwargs: Additional keyword arguments (unused in this router).
 
         Returns:
             A tuple containing the predicted difficulty ('easy' or 'hard') and a

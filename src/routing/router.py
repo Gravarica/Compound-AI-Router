@@ -50,18 +50,19 @@ class QueryRouter:
         self.label_map = self.router.label_map
         self.max_length = self.router.max_length
 
-    def predict_difficulty(self, query_text: str, confidence_threshold: float = 0.7) -> Tuple[str, float]:
+    def predict_difficulty(self, query_text: Optional[str] = None, query_id: Optional[str] = None, **kwargs) -> Tuple[str, float]:
         """
         Predict the difficulty of a query.
 
         Args:
             query_text: The query text to analyze
-            confidence_threshold: Threshold for classifying as 'easy'
+            query_id: The ID of the query (for oracle router)
+            **kwargs: Additional arguments for the underlying router (e.g., confidence_threshold)
 
         Returns:
             Tuple of (difficulty, confidence)
         """
-        return self.router.predict_difficulty(query_text, confidence_threshold)
+        return self.router.predict_difficulty(query_text=query_text, query_id=query_id, **kwargs)
 
     def fine_tune(self, train_data, val_data, output_dir, **kwargs):
         """

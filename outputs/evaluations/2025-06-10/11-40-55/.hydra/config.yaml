@@ -1,0 +1,14 @@
+experiment_name: baseline_large_llm
+output_dir: results/${experiment_name}
+run_mode: baseline
+router: null
+small_llm: null
+large_llm:
+  type: claude
+  model_name: claude-3-haiku-20240307
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+evaluation:
+  num_samples: 500
+  seed: 42
+  output_file: ${output_dir}/${experiment_name}_results.json
+baseline_llm: ${large_llm}

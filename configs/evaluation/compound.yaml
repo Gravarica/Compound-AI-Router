@@ -1,0 +1,6 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "compound_system"
+run_mode: "compound" 
