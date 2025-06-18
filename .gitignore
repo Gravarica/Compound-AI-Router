@@ -187,3 +187,6 @@ evaluation/roberta_evaluation/
 evaluation/example
 .env
 __pycache__/
+CLAUDE.md
+/results
+/outputs
