@@ -1,0 +1,25 @@
+run_mode: compound
+
+router:
+  type: llm
+  confidence_threshold: 0.7
+  llm_config:
+    type: "ollama"
+    model_name: "phi"  # Phi-2 model for routing decisions
+    host: "http://localhost:11434"
+
+small_llm:
+  type: "ollama"
+  model_name: "llama3.2:3b"
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+evaluation:
+  output_dir: "results_organized/experiments/router_types/llm"
+  num_samples: 100  # Smaller sample for testing
+  seed: 42
+  output_file: "results_organized/experiments/router_types/llm/phi2_router_llama3.2_claude_results.json"

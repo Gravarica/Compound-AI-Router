@@ -1,0 +1,25 @@
+run_mode: compound
+
+router:
+  type: llm
+  confidence_threshold: 0.7
+  llm_config:
+    type: "ollama"
+    model_name: "phi"
+    host: "http://localhost:11434"
+
+small_llm:
+  type: "ollama"
+  model_name: "llama3.2:1b"  # Even smaller model to create bigger gap
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+evaluation:
+  output_dir: "results_organized/experiments/router_types/llm"
+  num_samples: 25
+  seed: 42
+  output_file: "results_organized/experiments/router_types/llm/stress_test_1b_vs_claude_results.json"

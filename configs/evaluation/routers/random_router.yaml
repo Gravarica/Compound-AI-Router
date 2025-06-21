@@ -1,0 +1,21 @@
+run_mode: compound
+
+router:
+  type: random
+  seed: 42
+
+small_llm:
+  type: "ollama"
+  model_name: "llama3.2:3b"
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+evaluation:
+  output_dir: "results/random_router"
+  num_samples: 500
+  seed: 42
+  output_file: "results/random_router/random_router_results.json"

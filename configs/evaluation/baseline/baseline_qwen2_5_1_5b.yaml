@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - default
+
+# Baseline evaluation for Qwen2.5 1.5B model
+
+experiment_name: "baseline_qwen2_5_1_5b"
+run_mode: "baseline"
+
+# Model configuration
+baseline_llm:
+  type: "ollama"
+  model_name: "qwen2.5:1.5b"
+  host: "http://localhost:11434"
+
+# Evaluation configuration
+evaluation:
+  output_dir: "results/baselines/qwen2_5_1_5b"
+  num_samples: 3500  # Full ARC evaluation set
+  seed: 42
+  output_file: "results/baselines/qwen2_5_1_5b/baseline_qwen2_5_1_5b_results.json"

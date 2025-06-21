@@ -1,0 +1,31 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "compound_random_gpt_gemma2"
+run_mode: "compound"
+
+router:
+  type: "random"
+  seed: 42
+
+small_llm:
+  type: "ollama"
+  model_name: "gemma2:2b"
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "openai"
+  model_name: "gpt-4o-mini"
+  api_key: ${oc.env:OPENAI_API_KEY}
+
+dataset:
+  name: "arc"
+  split: "test"
+  num_samples: 500
+  seed: 42
+
+evaluation:
+  save_results: true
+  verbose: true
+  log_level: "INFO"

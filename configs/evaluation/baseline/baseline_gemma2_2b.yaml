@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - default
+
+# Baseline evaluation for Gemma2 2B model
+
+experiment_name: "baseline_gemma2_2b"
+run_mode: "baseline"
+
+# Model configuration
+baseline_llm:
+  type: "ollama"
+  model_name: "gemma2:2b"
+  host: "http://localhost:11434"
+
+# Evaluation configuration
+evaluation:
+  output_dir: "results/baselines/gemma2_2b"
+  num_samples: 3500  # Full ARC evaluation set
+  seed: 42
+  output_file: "results/baselines/gemma2_2b/baseline_gemma2_2b_results.json"

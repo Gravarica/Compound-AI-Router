@@ -47,24 +47,23 @@ class ThresholdBasedRoutingStrategy(RoutingStrategy):
 
     def select_llm(self, difficulty: str, confidence: float) -> Tuple[LLMInterface, str, str, str]:
         """
-        Select an LLM based on difficulty and confidence.
+        Select an LLM based on confidence threshold.
 
         Args:
-            difficulty: Predicted difficulty ('easy' or 'hard')
-            confidence: Confidence in the prediction
+            difficulty: Predicted difficulty ('easy' or 'hard') - for logging only
+            confidence: Confidence in the prediction (0.0 to 1.0)
 
         Returns:
             Tuple of (selected_llm, llm_name, size, decision_reason)
         """
         decision_reason = ""
 
-        if difficulty.lower() == "easy":
-            confidence_str = f" with {confidence:.2%} confidence" if confidence is not None else ""
-            decision_reason = f"Question classified as EASY{confidence_str}"
+        # Route based on confidence threshold, not difficulty prediction
+        if confidence >= self.confidence_threshold:
+            # High confidence: use small model (confident it's easy)
+            decision_reason = f"High confidence ({confidence:.2%} >= {self.confidence_threshold:.2%}) - using small model"
             return self.small_llm, self.small_llm.get_model_name(), 'small', decision_reason
         else:
-            if confidence is not None and confidence < 0.5 + self.confidence_threshold:
-                decision_reason = f"Question classified as HARD with low confidence ({confidence:.2%})"
-            else:
-                decision_reason = f"Question classified as HARD"
+            # Low confidence: use large model (uncertain, err on safe side)
+            decision_reason = f"Low confidence ({confidence:.2%} < {self.confidence_threshold:.2%}) - using large model"
             return self.large_llm, self.large_llm.get_model_name(), 'large', decision_reason

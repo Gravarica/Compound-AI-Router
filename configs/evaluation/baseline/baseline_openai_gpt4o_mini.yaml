@@ -1,0 +1,23 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "baseline_openai_gpt4o_mini"
+run_mode: "baseline"
+
+# Use OpenAI GPT-4o-mini as the baseline model
+baseline_llm:
+  type: "openai"
+  model_name: "gpt-4o-mini"
+  api_key: ${oc.env:OPENAI_API_KEY}
+  max_tokens: 1000
+
+# Unset router and small_llm as they are not used in baseline mode
+router: null
+small_llm: null
+
+evaluation:
+  output_dir: "results/baselines/openai_gpt4o_mini"
+  num_samples: 3500
+  seed: 42
+  output_file: "results/baselines/openai_gpt4o_mini/baseline_openai_gpt4o_mini_results.json"

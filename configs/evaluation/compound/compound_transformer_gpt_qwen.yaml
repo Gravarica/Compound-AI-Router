@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+  - default
+
+# Compound AI System: Transformer Router with GPT-4o-mini and Llama3.2 1B
+
+experiment_name: "transformer_router_gpt4o_mini_llama3_2_1b"
+run_mode: "compound"
+
+# Router configuration
+router:
+  model_path: "model-store/router_model"
+  confidence_threshold: 0.7
+  max_length: 512
+  device: null
+
+# Model configuration
+small_llm:
+  type: "ollama"
+  model_name: "llama3.2:1b"
+  host: "http://localhost:11434"
+    
+large_llm:
+  type: "openai"
+  model_name: "gpt-4o-mini"
+  api_key: ${oc.env:OPENAI_API_KEY}
+
+# Evaluation configuration
+evaluation:
+  output_dir: "results/experiments/threshold_sensitivity/gpt_llama1b"
+  num_samples: 3500
+  seed: 42
+  output_file: "results/experiments/threshold_sensitivity/gpt_llama1b/evaluation_results.json"

@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "baseline_claude_haiku"
+run_mode: "baseline"
+
+# Use Claude Haiku as the baseline model
+baseline_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+# Unset router and small_llm as they are not used in baseline mode
+router: null
+small_llm: null
+
+evaluation:
+  output_dir: "results/baselines/claude_haiku"
+  num_samples: 3500
+  seed: 42
+  output_file: "results/baselines/claude_haiku/baseline_claude_haiku_results.json"

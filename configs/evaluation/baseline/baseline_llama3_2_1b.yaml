@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "baseline_llama3_2_1b"
+run_mode: "baseline"
+
+# Use Llama3.2 1B as the baseline model
+baseline_llm:
+  type: "ollama"
+  model_name: "llama3.2:1b"
+  host: "http://localhost:11434"
+
+# Unset router and small_llm as they are not used in baseline mode
+router: null
+small_llm: null
+
+evaluation:
+  output_dir: "results/baselines/llama3_2_1b"
+  num_samples: 500
+  seed: 42
+  output_file: "results/baselines/llama3_2_1b/baseline_llama3_2_1b_results.json"

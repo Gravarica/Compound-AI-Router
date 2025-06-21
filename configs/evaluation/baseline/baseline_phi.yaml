@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+  - default
+
+experiment_name: "baseline_phi"
+run_mode: "baseline"
+
+# Use Phi as the baseline model
+baseline_llm:
+  type: "ollama"
+  model_name: "phi:latest"
+  host: "http://localhost:11434"
+
+# Unset router and small_llm as they are not used in baseline mode
+router: null
+small_llm: null
+
+evaluation:
+  output_dir: "results/baselines/phi"
+  num_samples: 500
+  seed: 42
+  output_file: "results/baselines/phi/baseline_phi_results.json"

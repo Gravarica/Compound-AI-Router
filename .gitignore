@@ -188,5 +188,7 @@ evaluation/example
 .env
 __pycache__/
 CLAUDE.md
+Case_Study_2_Router_QA.md
 /results
 /outputs
+/model-store

@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+  - default
+
+# Compound AI System: Transformer Router with Claude Haiku and Phi-2
+
+experiment_name: "transformer_router_claude_haiku_phi2"
+run_mode: "compound"
+
+# Router configuration
+router:
+  model_path: "model-store/router_model"
+  confidence_threshold: 0.7
+  max_length: 512
+  device: null
+
+# Model configuration
+small_llm:
+  type: "ollama"
+  model_name: "phi:latest"
+  host: "http://localhost:11434"
+    
+large_llm:
+  type: "claude"
+  model_name: "claude-3-haiku-20240307"
+  api_key: ${oc.env:ANTHROPIC_API_KEY}
+
+# Evaluation configuration
+evaluation:
+  output_dir: "results/experiments/compound/transformer_router/claude_phi"
+  num_samples: 500
+  seed: 42
+  output_file: "results/experiments/compound/transformer_router/claude_phi/evaluation_results.json"

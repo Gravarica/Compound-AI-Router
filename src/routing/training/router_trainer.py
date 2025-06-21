@@ -25,7 +25,7 @@ class RouterTrainer:
             train_data: List[Dict[str, Any]],
             val_data: List[Dict[str, Any]],
             output_dir: str,
-            epochs: int = 3,
+            epochs: int = 10,
             batch_size: int = 8,
             learning_rate: float = 5e-5,
             weight_decay: float = 0.01,
@@ -33,7 +33,8 @@ class RouterTrainer:
             early_stopping_patience: int = 3,
             early_stopping_threshold: float = 0.01,
             eval_steps: int = 100,
-            save_total_limit: int = 3
+            save_total_limit: int = 3,
+            enhanced_features: bool = False
     ) -> Dict[str, Any]:
         """
         Fine-tune the router on the provided data.
@@ -55,8 +56,8 @@ class RouterTrainer:
         Returns:
             Dictionary with training results
         """
-        train_dataset = RouterDataset(train_data, self.router.tokenizer, self.router.max_length)
-        val_dataset = RouterDataset(val_data, self.router.tokenizer, self.router.max_length)
+        train_dataset = RouterDataset(train_data, self.router.tokenizer, self.router.max_length, enhanced_features)
+        val_dataset = RouterDataset(val_data, self.router.tokenizer, self.router.max_length, enhanced_features)
 
         logger.info(f"Training dataset size: {len(train_dataset)}")
         logger.info(f"Validation dataset size: {len(val_dataset)}")
@@ -75,7 +76,7 @@ class RouterTrainer:
             save_strategy='epoch',
             load_best_model_at_end=True,
             save_total_limit=save_total_limit,
-            metric_for_best_model="eval_f1",
+            metric_for_best_model="hard_f1",
             greater_is_better=True,
             logging_dir=os.path.join(output_dir, "logs"),
             logging_steps=eval_steps,

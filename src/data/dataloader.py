@@ -32,7 +32,7 @@ test()
 from datasets import load_dataset, DatasetDict, concatenate_datasets
 import os
 import json
-import random
+from random import shuffle
 from typing import Dict, List, Tuple, Optional, Any
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -78,9 +78,13 @@ class ARCDataManager:
         formatted_question = f"Question: {question} \n\nChoices:\n{formatted_choices}"
         return formatted_question
 
-    def create_router_training_data(self,
-                                    val_split_ratio: float = 0.1,
-                                    test_split_ratio: float = 0.1) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+    def create_router_training_data(
+            self,
+            val_split_ratio: float = 0.1,
+            test_split_ratio: float = 0.1,
+            balance_classes: bool = False,
+            balance_strategy: str = "downsample"  # "downsample", "upsample", "hybrid", "none"
+    ) -> Tuple[List[Dict], List[Dict], List[Dict]]:
 
         if self.arc_easy is None or self.arc_challenge is None:
             self.load_data()
@@ -107,14 +111,58 @@ class ARCDataManager:
                     'original_data': item
                 })
 
+        if balance_classes:
+            import random
+            random.seed(42)  # For reproducibility
+            
+            easy_count, hard_count = len(easy_data), len(challenge_data)
+            print(f"Original class distribution - Easy: {easy_count}, Hard: {hard_count}")
+            
+            if balance_strategy == "downsample":
+                # Current approach: downsample majority to minority size
+                min_size = min(easy_count, hard_count)
+                easy_data = random.sample(easy_data, min_size)
+                challenge_data = random.sample(challenge_data, min_size)
+                print(f"Downsampled to - Easy: {len(easy_data)}, Hard: {len(challenge_data)}")
+                
+            elif balance_strategy == "upsample":
+                # Upsample minority to majority size (duplicate samples)
+                max_size = max(easy_count, hard_count)
+                if easy_count < hard_count:
+                    # Upsample easy
+                    easy_data = easy_data + random.choices(easy_data, k=max_size - easy_count)
+                else:
+                    # Upsample hard  
+                    challenge_data = challenge_data + random.choices(challenge_data, k=max_size - hard_count)
+                print(f"Upsampled to - Easy: {len(easy_data)}, Hard: {len(challenge_data)}")
+                
+            elif balance_strategy == "hybrid":
+                # Balanced mix: slight downsample of majority + slight upsample of minority
+                target_size = int((easy_count + hard_count) * 0.4)  # 40% of combined data per class
+                
+                if easy_count > hard_count:
+                    # Easy is majority
+                    easy_data = random.sample(easy_data, min(target_size, easy_count))
+                    if hard_count < target_size:
+                        challenge_data = challenge_data + random.choices(challenge_data, k=target_size - hard_count)
+                else:
+                    # Hard is majority  
+                    challenge_data = random.sample(challenge_data, min(target_size, hard_count))
+                    if easy_count < target_size:
+                        easy_data = easy_data + random.choices(easy_data, k=target_size - easy_count)
+                        
+                print(f"Hybrid balanced to - Easy: {len(easy_data)}, Hard: {len(challenge_data)}")
+            
+            # balance_strategy == "none" keeps original distribution
+
         combined_data = easy_data + challenge_data
-        random.shuffle(combined_data)
+        shuffle(combined_data)
 
         test_size = val_split_ratio + test_split_ratio
         train_data, temp_data = train_test_split(combined_data, test_size=test_size, random_state=42)
 
         relative_val_size = val_split_ratio / test_size
-        val_data, test_data = train_test_split(temp_data, test_size=(1-relative_val_size), random_state=42)
+        val_data, test_data = train_test_split(temp_data, test_size=(1 - relative_val_size), random_state=42)
 
         print(f"Created router training data: ")
         print(f"\t {len(train_data)} training examples")
@@ -175,11 +223,16 @@ class ARCDataManager:
         prompt = f"{formatted_question}\n\nPlease select the correct answer (A, B, C, or D) and only answer with the choice letter."
         return prompt
 
+    def count_difficulty_distribution(self, dataset: List[Dict], name: str = "dataset") -> None:
+        easy_count = sum(1 for item in dataset if item['label'] == 0)
+        hard_count = sum(1 for item in dataset if item['label'] == 1)
+        print(f"{name} → Easy: {easy_count}, Hard: {hard_count}, Total: {len(dataset)}")
+
 def test_arc_data_manager():
     manager = ARCDataManager()
     manager.load_data()
 
-    train_data, val_data, test_data = manager.create_router_training_data()
+    train_data, val_data, test_data = manager.create_router_training_data(balance_classes=True)
 
     eval_set = manager.get_arc_evaluation_set()
 
@@ -189,6 +242,16 @@ def test_arc_data_manager():
     prompt = manager.create_prompt(sample)
 
     print(prompt)
+
+    print("\n=== Sample Prompt ===")
+    print(prompt)
+
+    print("\n=== Dataset Difficulty Distributions ===")
+    manager.count_difficulty_distribution(train_data, "Router Train")
+    manager.count_difficulty_distribution(val_data, "Router Validation")
+    manager.count_difficulty_distribution(test_data, "Router Test")
+    manager.count_difficulty_distribution(eval_set, "ARC Evaluation Set")
+    manager.count_difficulty_distribution(router_eval_set, "Router-Based Evaluation Set")
 
     return {
         'train_size': len(train_data),

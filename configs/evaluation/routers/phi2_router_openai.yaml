@@ -1,0 +1,26 @@
+run_mode: compound
+
+router:
+  type: llm
+  confidence_threshold: 0.7
+  llm_config:
+    type: "ollama"
+    model_name: "phi"  # Phi-2 model for routing decisions
+    host: "http://localhost:11434"
+
+small_llm:
+  type: "ollama"
+  model_name: "llama3.2:3b"
+  host: "http://localhost:11434"
+
+large_llm:
+  type: "openai"
+  model_name: "gpt-4o-mini"
+  api_key: ${oc.env:OPENAI_API_KEY}
+  max_tokens: 1000
+
+evaluation:
+  output_dir: "results_organized/experiments/router_types/llm"
+  num_samples: 500
+  seed: 42
+  output_file: "results_organized/experiments/router_types/llm/phi2_router_llama3.2_gpt4mini_results.json"

@@ -1,7 +1,7 @@
 import os
 import argparse
 import json
-from src.routing.router import QueryRouter
+from src.routing import QueryRouter
 from src.data.dataloader import ARCDataManager
 import logging
 
@@ -16,11 +16,11 @@ def main():
                         help="Base model to use for the router (default: distilbert-base-uncased)")
     parser.add_argument("--output_dir", type=str, default="./router_model",
                         help="Directory to save the fine-tuned model")
-    parser.add_argument("--epochs", type=int, default=3,
+    parser.add_argument("--epochs", type=int, default=15,
                         help="Number of training epochs")
-    parser.add_argument("--batch_size", type=int, default=8,
+    parser.add_argument("--batch_size", type=int, default=16,
                         help="Training batch size")
-    parser.add_argument("--learning_rate", type=float, default=5e-5,
+    parser.add_argument("--learning_rate", type=float, default=2e-5,
                         help="Learning rate")
     parser.add_argument("--max_length", type=int, default=512,
                         help="Maximum sequence length")
@@ -30,6 +30,11 @@ def main():
                         help="Only evaluate the model, no training")
     parser.add_argument("--eval_model_path", type=str, default=None,
                         help="Path to the fine-tuned model for evaluation")
+    parser.add_argument("--balance_strategy", type=str, default="none",
+                        choices=["downsample", "upsample", "hybrid", "none"],
+                        help="Strategy for class balancing")
+    parser.add_argument("--enhanced_features", action="store_true",
+                        help="Use enhanced text features and special tokens")
 
     args = parser.parse_args()
 
@@ -40,7 +45,10 @@ def main():
 
     logger.info("Loading ARC data...")
     manager = ARCDataManager()
-    train_data, val_data, test_data = manager.create_router_training_data()
+    train_data, val_data, test_data = manager.create_router_training_data(
+        balance_classes=(args.balance_strategy != "none"),
+        balance_strategy=args.balance_strategy
+    )
 
     if args.eval_only and args.eval_model_path:
         logger.info(f"Initializing router with pre-trained model from {args.eval_model_path}")
@@ -63,7 +71,8 @@ def main():
             output_dir=args.output_dir,
             epochs=args.epochs,
             batch_size=args.batch_size,
-            learning_rate=args.learning_rate
+            learning_rate=args.learning_rate,
+            enhanced_features=args.enhanced_features
         )
 
         router.load_fine_tuned_model(args.output_dir)
@@ -79,6 +88,8 @@ def main():
                 cleaned_results[k] = v
             elif isinstance(v, (list, dict)):
                 cleaned_results[k] = v
+            elif isinstance(v, str):
+                cleaned_results[k] = v  # Keep strings as strings (e.g., file paths)
             else:
                 cleaned_results[k] = float(v)
 
