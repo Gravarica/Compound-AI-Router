@@ -2,7 +2,7 @@
 
 A comprehensive system for intelligently routing queries between small and large Language Models (LLMs) based on predicted difficulty, optimizing for cost-efficiency while maintaining accuracy.
 
-## 🎯 System Overview
+## System Overview
 
 This project implements a **Compound AI Router** that dynamically selects between different LLMs based on query difficulty prediction. The system aims to reduce computational costs and API expenses by using smaller, faster models for easier queries while routing complex queries to larger, more capable models.
 
